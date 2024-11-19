@@ -34,6 +34,16 @@ FORBIDDEN_SENTENCE_HEBREW = "עלות פלוס: חינם | יאללה: חינם"
 FORBIDDEN_SENTENCE_ARABIC = "السعر: شيكل"
 
 
+class MetaData:
+    def __init__ (self, firstMonthInteger = None, secondMonthInteger = None, firstMonthName = None, secondMonthName = None, year = None, contactName = None, contactPhone = None, splitYear = False):
+        self.month1 = month1
+        self.month2 = month2
+        self.year=year
+        self.contactName = contactName
+        self.contactPhone = contactPhone
+        self.splitYear = splitYear
+
+
 # An object holding the fields of the Excel input event: date (datetime), day (string), hour (datetime.time), title (string), 
 # text1 (string), location (string), price (string), isFree (bool), isZoom (bool) and month (int) of a planned event 
 class Event:
@@ -120,33 +130,35 @@ def readExcel(excel_name):
         # Define variable to read sheet
         sheet = ws.active
     
-        events, months = getEventsAndMonthsFromExcel(sheet)
+        events = getEventsFromExcel(sheet)
 
         if len(months)<2:
             raise Exception("קובץ האקסל מכיל פחות משני חודשים")
 
-        first_month = months[0];
-        second_month = months[1];
 
-        first_months_events = []
-        second_months_events = []
-
-        #Split the Event list into first month and second month events
-        for event in events:
-            if event.month == first_month:
-                first_months_events.append(event)
-            elif event.month == second_month:
-                second_months_events.append(event)
-            else:
-                raise Exception("קובץ האקסל מכיל מעל לשני חודשיים")
-
-        return first_months_events, second_months_events, months
+        return splitExcelEventsByMonths(events)
     except CellCoordinatesException:
         raise Exception("שגיאת המרה בין ערך נומרי ל-A1-style")
     except IllegalCharacterError:
         raise Exeption("קובץ האקסל מכיל תוים לא חוקייים")
     except InvalidFileException:
         raise Exception("שיגאה בעת נסיון פתיחת קובץ שאינו קובץ אקסל")
+
+
+#Split the Event list into first month and second month events
+def splitExcelEventsByMonths(events):
+    first_months_events = []
+    second_months_events = []
+
+    for event in events:
+        if event.month == metaData.firstMonthInteger:
+            first_months_events.append(event)
+        elif event.month == metaData.secondMonthInteger:
+            second_months_events.append(event)
+        else:
+            raise Exception("קובץ האקסל מכיל מעל לשני חודשיים")
+    return first_months_events, second_months_events
+
 
 def trimLeadingZero(inputString):
     if inputString.startswith('0'):
@@ -184,9 +196,9 @@ def getMonth(eventString):
 #     Exceptions:
 #         ValueError
 
-def getEventsAndMonthsFromExcel(sheet):
+def getEventsFromExcel(sheet):
     events = []
-    months = []
+    excelMonths = []
     # Iterate the loop to read the cell values
     # Ignore first row with column titles
     for rowIndex in range(2, sheet.max_row+1):
@@ -197,7 +209,8 @@ def getEventsAndMonthsFromExcel(sheet):
                     continue;
                 else:
                     raise Exception("שורה \n"+str(rowIndex)+"\n עמודה: \n"+str(1)+"\nהערך ריק או לא תואם את התבנית:\n "+"DD.MM")
-            
+        
+
         day = sheet.cell(row=rowIndex,column=2).value
         if day is None: 
             raise Exception("שורה \n"+str(rowIndex)+"\n עמודה: \n"+str(2)+"\nהערך ריק ")
@@ -242,11 +255,13 @@ def getEventsAndMonthsFromExcel(sheet):
 
         event = Event(str(date), str(hourValue), title, text1, location, price, isFree, isZoom)
         events.append(event)
-        if event.month not in months:
+        if event.month not in excelMonths:
              months.append(event.month)
-    if not (12 in months and 1 in months):
-        months.sort()
-    return events, months
+    if not (12 in excelMonths and 1 in excelMonths):
+        excelMonths.sort()
+    metaData.firstMonthInteger = excelMonths[0]
+    metaData.secondMonthInteger = excelMonths[1]
+    return events
 
 
 
@@ -1137,6 +1152,7 @@ def writeTextToTextboxes(slide, monthsEvents, singleEventsShape, doubleEventsSha
 
 def main():
     try:
+        metaData = MetaData()
         create_program_GUI()
     except Exception as e:
         if str(e)=="קובץ ה-cache אינו תקין":
