@@ -29,7 +29,19 @@ import calendar
 from enum import Enum
 
 
-excelEventsDictionary = {}
+firstMonthExcelEventsDictionary = {}
+secondMonthExcelEventsDictionary = {}
+
+excelEventsDictionary = {"firstMonth" : firstMonthExcelEventsDictionary, "secondMonth" : secondMonthExcelEventsDictionary}
+
+def addToExcelEventDictionary(excelEvent, Dictionary):
+    if eventDayInMonth in Dictionary:
+        if len(Dictionary[eventDayInMonth]) >= 2:
+            raise Exception("בתאריך " + excelEvent.date + " קיימים מעל לשני אירועים") #TODO: check this case
+        Dictionary[eventDayInMonth].append(excelEvent)
+    else:
+        Dictionary[eventDayInMonth] = [excelEvent]
+
 
 MAX_FIRST_MONTH_EVENT_COUNT = 31
 MAX_SECOND_MONTH_EVENT_COUNT = 31
@@ -50,11 +62,13 @@ class MetaData:
         self.hasCacheFile = hasCacheFile
 
 
+
 # An object holding the fields of the Excel input event: date (datetime), day (string), hour (datetime.time), title (string), 
 # text1 (string), location (string), price (string), isFree (bool), isZoom (bool) and month (int) of a planned event 
 class ExcelEvent:
-    def __init__(self, date, hour, title, location, price, community, link, eventType):
+    def __init__(self, date, day, hour, title, location, price, community, link, eventType):
         self.date = date
+        self.day = day
         self.hour = hour
         self.title = title
         self.location = location
@@ -63,7 +77,7 @@ class ExcelEvent:
         self.link = link
         self.eventType = eventType
         self.month = getMonth(date)
-        self.day = getDayFromDate(date)
+        self.dayInMonth = getDay(date)
 
     #Comparison function, comparing Event objects
     #by date and hour (if dates are equal)
@@ -73,6 +87,20 @@ class ExcelEvent:
     def __str__(self):
         return "date = %s, hour = %s, title = %s, month = %s"%(self.date.date(),self.hour, self.title, str(self.month))
 
+
+class Community(Enum):
+    SINGLES = 1
+    TIULA = 2
+    YOLO = 3
+    WOMEN = 4
+    GOLDERS = 5
+    KULTURA = 6
+
+class EventType(Enum):
+    REGULAR = 1
+    WIDE = 2
+    PICK = 3
+    
 
 
 # An object holding the different shapes of the input powerpoint event shape: dateShape (shape), dayShape (shape), hourShape (shape), titleShape (shape), 
@@ -137,12 +165,8 @@ def readExcel(excel_name):
         # Define variable to read sheet
         sheet = ws.active
     
-        events = getEventsFromExcel(sheet)
-
-        if len(months)<2:
-            raise Exception("קובץ האקסל מכיל פחות משני חודשים")
-
-
+        getEventsFromExcel(sheet)
+          
         return splitExcelEventsByMonths(events)
     except CellCoordinatesException:
         raise Exception("שגיאת המרה בין ערך נומרי ל-A1-style")
@@ -211,12 +235,12 @@ def getDay(eventDate):
 #         ValueError
 
 def getEventsFromExcel(sheet):
-    excelEvents = []
     excelMonths = []
-    community, link, eventType = None
+    dictionary = firstMonthExcelEventsDictionary
     # Iterate the loop to read the cell values
     # Ignore first row with column titles
     for rowIndex in range(2, sheet.max_row+1):
+
         date = sheet.cell(row=rowIndex,column=1).value
         if not checkDateStringValidity(str(date)):
             if str(date)=="":
@@ -224,8 +248,6 @@ def getEventsFromExcel(sheet):
                     continue;
                 else:
                     raise Exception("שורה \n"+str(rowIndex)+"\n עמודה: \n"+str(1)+"\nהערך ריק או לא תואם את התבנית:\n "+"DD.MM")
-        
-        eventDayInMonth = getDay(str(date))
 
         day = sheet.cell(row=rowIndex,column=2).value
         if day is None: 
@@ -247,11 +269,6 @@ def getEventsFromExcel(sheet):
         if title is None:
             title = ""
 
-
-        text1 = sheet.cell(row=rowIndex,column=5).value
-        if text1 is None:
-            text1 = ""
-
         location = sheet.cell(row=rowIndex,column=6).value
         if location is None:
             location = ""
@@ -260,25 +277,35 @@ def getEventsFromExcel(sheet):
         if price is None:
             price = ""
 
+        communityString = sheet.cell(row = rowIndex, column = 8).value
+        community = getCommunityFromString(communityString) #TODO: write this one
 
-        isFree = sheet.cell(row = rowIndex, column = 8).value
-        if isFree is None:
-            isFree = False
+        link = sheet.cell(row = rowIndex, column = 9).value
+        #TODO: check link validity
 
-        isZoom = sheet.cell(row=rowIndex, column = 9).value
-        if isZoom is None:
-            isZoom = False
+        eventTypeString = sheet.cell(row = rowIndex, column = 10).value
+        eventType = getEventTypeFromString(eventTypeString) #TODO: write this one too
+
 
         excelEvent = ExcelEvent(str(date), str(hourValue), title, location, price, community, link, eventType)
-        excelEvents.append(excelEvent)
+
         if excelEvent.month not in excelMonths:
-             months.append(excelEvent.month)
+            if len(excelMonths) == 1:
+                dictionary = secondMonthExcelEventsDictionary
+             if len(excelMonths) >= 2:
+                raise Exception("קובץ האקסל מכיל מעל לשני חודשים")
+             excelMonths.append(excelEvent.month)
+
+    if len(excelMonths) < 2:
+        raise Exception("קובץ האקסל מכיל פחות משני חודשים")
+
     if not (12 in excelMonths and 1 in excelMonths):
         excelMonths.sort()
+
     metaData.firstMonthInteger = excelMonths[0]
     metaData.secondMonthInteger = excelMonths[1]
-    excelEventsDictionary[eventDayInMonth] = event
-    return events
+
+    addToExcelEventDictionary(excelEvent, dictionary)
 
 
 
