@@ -26,6 +26,10 @@ import easygui
 import json
 import os
 import calendar
+from enum import Enum
+
+
+excelEventsDictionary = {}
 
 MAX_FIRST_MONTH_EVENT_COUNT = 31
 MAX_SECOND_MONTH_EVENT_COUNT = 31
@@ -35,28 +39,31 @@ FORBIDDEN_SENTENCE_ARABIC = "السعر: شيكل"
 
 
 class MetaData:
-    def __init__ (self, firstMonthInteger = None, secondMonthInteger = None, firstMonthName = None, secondMonthName = None, year = None, contactName = None, contactPhone = None, splitYear = False):
+    def __init__ (self, firstMonthInteger = None, secondMonthInteger = None, firstMonthName = None, secondMonthName = None, year = None, contactName = None, contactPhone = None, splitYear = False,
+        hasCacheFile = False):
         self.month1 = month1
         self.month2 = month2
         self.year=year
         self.contactName = contactName
         self.contactPhone = contactPhone
         self.splitYear = splitYear
+        self.hasCacheFile = hasCacheFile
 
 
 # An object holding the fields of the Excel input event: date (datetime), day (string), hour (datetime.time), title (string), 
 # text1 (string), location (string), price (string), isFree (bool), isZoom (bool) and month (int) of a planned event 
-class Event:
-    def __init__(self, date, hour, title, text1, location, price, isFree, isZoom):
+class ExcelEvent:
+    def __init__(self, date, hour, title, location, price, community, link, eventType):
         self.date = date
         self.hour = hour
         self.title = title
-        self.text1 = text1
         self.location = location
         self.price = price
-        self.isFree = isFree
-        self.isZoom = isZoom
+        self.community = community
+        self.link = link
+        self.eventType = eventType
         self.month = getMonth(date)
+        self.day = getDayFromDate(date)
 
     #Comparison function, comparing Event objects
     #by date and hour (if dates are equal)
@@ -177,12 +184,19 @@ def checkDateStringValidity(inputString):
                         return True
     return False
 
-def getMonth(eventString):
-    eventStringArr = eventString.split('.')
-    if len(eventStringArr) < 2:
-       eventStringMiddleSplit = eventString.split(' ')
-       eventStringArr = eventStringMiddleSplit[0].split('-')
+def getMonth(eventDate):
+    eventDategArr = eventDate.split('.')
+    if len(eventDategArr) < 2:
+       eventDateMiddleSplit = eventDate.split(' ')
+       eventDategArr = eventDateMiddleSplit[0].split('-')
     return int(eventStringArr[1])
+
+def getDay(eventDate):
+    eventDategArr = eventDate.split('.')
+    if len(eventDategArr) < 2:
+       eventDateMiddleSplit = eventDate.split(' ')
+       eventDategArr = eventDateMiddleSplit[0].split('-')
+    return int(eventStringArr[0])
 
 
 
@@ -197,8 +211,9 @@ def getMonth(eventString):
 #         ValueError
 
 def getEventsFromExcel(sheet):
-    events = []
+    excelEvents = []
     excelMonths = []
+    community, link, eventType = None
     # Iterate the loop to read the cell values
     # Ignore first row with column titles
     for rowIndex in range(2, sheet.max_row+1):
@@ -210,6 +225,7 @@ def getEventsFromExcel(sheet):
                 else:
                     raise Exception("שורה \n"+str(rowIndex)+"\n עמודה: \n"+str(1)+"\nהערך ריק או לא תואם את התבנית:\n "+"DD.MM")
         
+        eventDayInMonth = getDay(str(date))
 
         day = sheet.cell(row=rowIndex,column=2).value
         if day is None: 
@@ -253,14 +269,15 @@ def getEventsFromExcel(sheet):
         if isZoom is None:
             isZoom = False
 
-        event = Event(str(date), str(hourValue), title, text1, location, price, isFree, isZoom)
-        events.append(event)
-        if event.month not in excelMonths:
-             months.append(event.month)
+        excelEvent = ExcelEvent(str(date), str(hourValue), title, location, price, community, link, eventType)
+        excelEvents.append(excelEvent)
+        if excelEvent.month not in excelMonths:
+             months.append(excelEvent.month)
     if not (12 in excelMonths and 1 in excelMonths):
         excelMonths.sort()
     metaData.firstMonthInteger = excelMonths[0]
     metaData.secondMonthInteger = excelMonths[1]
+    excelEventsDictionary[eventDayInMonth] = event
     return events
 
 
