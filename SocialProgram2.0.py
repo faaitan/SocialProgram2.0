@@ -51,13 +51,15 @@ FORBIDDEN_SENTENCE_ARABIC = "السعر: شيكل"
 
 
 class MetaData:
-    def __init__ (self, firstMonthInteger = None, secondMonthInteger = None, firstMonthName = None, secondMonthName = None, year = None, contactName = None, contactPhone = None, splitYear = False,
+    def __init__ (self, firstMonthInteger = None, secondMonthInteger = None, firstMonthName = None, secondMonthName = None, year = None, contactName = None, contactPhone = None, language = None,
+    splitYear = False,
         hasCacheFile = False):
         self.month1 = month1
         self.month2 = month2
         self.year=year
         self.contactName = contactName
         self.contactPhone = contactPhone
+        self.language = language
         self.splitYear = splitYear
         self.hasCacheFile = hasCacheFile
 
@@ -99,9 +101,14 @@ class Community(Enum):
 class EventType(Enum):
     REGULAR = 1
     WIDE = 2
-    PICK = 3
-    
+    PEAK = 3
 
+class ShapeType(Enum):
+    SINGLE = 1
+    DOUBLE = 2
+    PIC = 3
+    OFF = 4
+    
 
 # An object holding the different shapes of the input powerpoint event shape: dateShape (shape), dayShape (shape), hourShape (shape), titleShape (shape), 
 # text1Shape (shape), locationShape (shape) priceShape, freeShape (shape), zoomShape (shape)
@@ -848,7 +855,7 @@ def create_program_GUI():
         textbox2.grid(sticky="e", row=7, column=1, columnspan=5)
         textbox2.configure(state="disabled")
 
-        btn4 = tk.Button(text="צרו תוכנית דו-חודשית!", command= lambda: createPptxPlan(assignFirstMonthTextbox.get(), assignSecondMonthTextbox.get(), assignLocationTextbox.get(), assignContactTextbox.get(),assignYearTextbox.get(), language.get()))
+        btn4 = tk.Button(text="צרו תוכנית דו-חודשית!", command= lambda: createPptxPlans(assignFirstMonthTextbox.get(), assignSecondMonthTextbox.get(), assignLocationTextbox.get(), assignContactTextbox.get(),assignYearTextbox.get(), language.get()))
         btn4.grid(sticky="e", row=9, column = 5)
         btn4['background']='#4cb263'
         btn4.config(fg="white")
@@ -913,7 +920,7 @@ def checkValidity(value, extension):
 #         year:
 #         language: 
 
-def createPptxPlan(month1, month2, area, contact, year, language):
+def createPptxPlans(month1, month2, area, contact, year, language):
     try: 
         cache_file = open("cache.txt", "w")
         userInput = {
@@ -946,7 +953,7 @@ def createPptxPlan(month1, month2, area, contact, year, language):
         createCalendarDates(single_event_shapes, year, monthsFromExcel[0])
         createCalendarDates(double_event_shapes, year, monthsFromExcel[0])
 
-        writeTextToTextboxes(slide, first_months_events, single_event_shapes, double_event_shapes, friday_event_shapes, language, year, monthsFromExcel[0])
+        writeTextToTextboxes(slide, single_event_shapes, double_event_shapes, "firstMonth")
 
         try:
             slide = presentation.slides[1]
@@ -990,15 +997,14 @@ def get_number_of_shape(year, month, day):
     x = np.array(calendar.monthcalendar(year, month))
     week_of_month = np.where(x==day)[0][0] # 0 is first week
     day_of_week = np.where(x == day)[1][0]+1 # 1 is Sunday
-    if day_of_week > 5: 
-        if day_of_week == 6:
-            return 100
+    if day_of_week > 6: 
         return -1
     first_day_of_month = np.where(x == 1)[1][0] + 1 # for removing first week that starts on Friday or Saturday
-    if first_day_of_month <= 5: 
-        return week_of_month*5 + day_of_week
+    if first_day_of_month <= 6: 
+        return week_of_month*6 + day_of_week
     else:
-        return (week_of_month - 1)*5 + day_of_week
+        return (week_of_month - 1)*6 + day_of_week
+
 
 def createCalendarDates(eventsShape, year, month, increaseYear = False):
 
@@ -1020,6 +1026,7 @@ def createCalendarDates(eventsShape, year, month, increaseYear = False):
             run_date = p_date.runs[0]
             run_date.text =str(i) 
 
+
 def findEventDay(event):
     date = event.date
     dateArray = date.split('.')
@@ -1030,26 +1037,40 @@ def findEventDay(event):
 
 
 
-def writeTextToTextboxes(slide, monthsEvents, singleEventsShape, doubleEventsShape, fridayEventsShape, language, year, month, increaseYear = False):
-
-    year = int(year)
-    if increaseYear:
+def writeTextToTextboxes(slide, singleEventShapes, doubleEventShapes, numOfMonth):
+    year = int(metaData.year)
+    if metaData.increaseYear:
         year += 1
+
     numOfDaysInMonth = calendar.monthrange(year, month)[1]
     first_day_of_week1 = get_number_of_shape(year, month, 1) - 1
 
-    i = 0
-    fridayCount = 0
+    treat_off_shapes(singleEventShapes, doubleEventShapes)
 
-    while i< len(monthsEvents):
+    day_in_month = 1
+
+    if first_day_of_week == 6: 
+        day_in_month += 1
+    else:
+        for i in range(first_day_of_week):
+            treat_off_shape(singleEventShapes[i],doubleEventShapes[i]) #TODO: please write me
+
+    single_event_shape, double_event_shape = None
+
+    while day_in_month <= 36:
+
+        single_event_shape = singleEventShapes[i-1]
+        double_event_shepe = doubleEventShapes[i-1]
+
+        type = get_shape_type(i)
+
+
+
 
         event = monthsEvents[i]
         day = findEventDay(event)
 
-        next_event = None
-        next_next_event = None
-        isDouble = False
-        isFriday = False
+
 
         event_shape_num = get_number_of_shape(year, month, day)-1
         if event_shape_num >= 99:
@@ -1307,6 +1328,25 @@ def writeTextToTextboxes(slide, monthsEvents, singleEventsShape, doubleEventsSha
     if fridayEventsShape:
         for i in range(fridayCount, 5):
             slide.shapes.element.remove(fridayEventsShape[i].shape.element)
+
+def get_shape_type(day_in_month, numOfMonth):
+    excelEvents = excelEventsDictionary[numOfMonth]
+    if day_in_month in excelEvents:
+        excelEventArray = excelEvent[dayInMonth]
+        if len(excelEventArray) == 1:
+            return ShapeType.SINGLE
+        elif len(excelEventArray) == 2:
+            return ShapeType.DOUBLE
+    else:
+        if is_day_off(day_in_month):
+            return ShapeType.OFF
+        else:
+            return ShapeType.PIC
+
+
+def is_day_off(day_in_month)
+    return False #TODO: implement me please
+
 
 def main():
     try:
