@@ -54,14 +54,18 @@ class MetaData:
     def __init__ (self, firstMonthInteger = None, secondMonthInteger = None, firstMonthName = None, secondMonthName = None, year = None, contactName = None, contactPhone = None, language = None,
     splitYear = False,
         hasCacheFile = False):
-        self.month1 = month1
-        self.month2 = month2
+        self.firstMonthInteger = firstMonthInteger
+        self.secondMonthInteger = secondMonthInteger
+        self.firstMonthName = firstMonthName
+        self.secondMonthName = secondMonthName
         self.year=year
         self.contactName = contactName
         self.contactPhone = contactPhone
         self.language = language
         self.splitYear = splitYear
         self.hasCacheFile = hasCacheFile
+        self.isFirstPresentation = True
+        self.isSecondPresentation = False
 
 
 
@@ -338,6 +342,8 @@ def getEventsFromExcel(sheet):
 
     if not (12 in excelMonths and 1 in excelMonths):
         excelMonths.sort()
+    else:
+        metaData.increaseYear = True
 
     metaData.firstMonthInteger = excelMonths[0]
     metaData.secondMonthInteger = excelMonths[1]
@@ -921,6 +927,8 @@ def checkValidity(value, extension):
 #         language: 
 
 def createPptxPlans(month1, month2, area, contact, year, language):
+    if len(year)!=4:
+            raise Exception("שדה השנה צריך להכיל 4 תוים בדיוק. למשל: 2023")
     try: 
         cache_file = open("cache.txt", "w")
         userInput = {
@@ -933,42 +941,35 @@ def createPptxPlans(month1, month2, area, contact, year, language):
         }
         cache_file.write(json.dumps(userInput))
         cache_file.close
-        months_names = [month1,month2]
 
-        excel_name=excelFilePath
-        pptx_name = pptxFilePath
+        metaData.firstMonthName = month1
+        metaData.secondMonthName = month2
+        metaData.year = year
+        metaData.area = area
+        metaData.language = language
 
-        readExcel(excel_name)
 
-        presentation = Presentation(pptx_name)
+        readExcel(excelFilePath)
 
-        first_slide = presentation.slides[0]
-        second_slide = presentation.slides[1] #TODO: wrap in try catch and throw excecption?
-        single_event_shapes, double_event_shapes, header_shape = get_slide_shapes(slide)
-        increaseYear = False
-
-        calendar.setfirstweekday(6)
-        if len(year)!=4:
-            raise Exception("שדה השנה צריך להכיל 4 תוים בדיוק. למשל: 2023")
-        createCalendarDates(single_event_shapes, year, monthsFromExcel[0])
-        createCalendarDates(double_event_shapes, year, monthsFromExcel[0])
-
-        writeTextToTextboxes(slide, single_event_shapes, double_event_shapes, "firstMonth")
-
+        #createPptxPlan(pptxFilePath)
         try:
-            slide = presentation.slides[1]
+            presentation = Presentation(pptxFilePath)
+
+            first_slide = presentation.slides[0]
+            second_slide = presentation.slides[1] #TODO: wrap in try catch and throw excecption?
+
+            processFirstSlide(first_slide, isFirstPresentation)
+            processSecondSlide(second_slide, isFirstPresentation)
+
         except IndexError:
             raise Exception("תבנית ה-powerpoint מכילה פחות מ-2 שקפים")
+        
+
+        
 
         single_event_shapes, double_event_shapes, friday_event_shapes = get_text_boxes(slide, months_names, area, contact)
 
-        calendar.setfirstweekday(6)
-        if monthsFromExcel[1]==1:
-            increaseYear = True
-        createCalendarDates(single_event_shapes, year, monthsFromExcel[1], increaseYear)
-        createCalendarDates(double_event_shapes, year, monthsFromExcel[1], increaseYear)
-
-        writeTextToTextboxes(slide, second_months_events, single_event_shapes, double_event_shapes, friday_event_shapes, language, year, monthsFromExcel[1], increaseYear)
+        
 
 
         files = [('Powerpoint files', '*.pptx')]
@@ -981,6 +982,34 @@ def createPptxPlans(month1, month2, area, contact, year, language):
 
     except Exception as e:
         easygui.msgbox("שגיאה :"+ str(e))
+
+    
+
+
+def processFirstSlide(slide, isFirstPresentation):
+    pass
+
+
+def processSecondSlide(slide, isFirstPresentation):
+    single_event_shapes, double_event_shapes, header_shape = get_slide_shapes(slide)
+
+    calendar.setfirstweekday(6)
+    
+    if isFirstPresentation:
+
+        calendar.setfirstweekday(6)
+
+        createCalendarDates(single_event_shapes, double_event_shapes, metaData.firstMonthInteger)
+
+        writeTextToTextboxes(slide, single_event_shapes, double_event_shapes)    
+
+
+
+
+        
+
+    writeTextToTextboxes(slide, single_event_shapes, double_event_shapes, "firstMonth")
+
 
 def clearTextboxText(first_paragrpah, text_frame):
     if len(first_paragrpah.runs)>1:
@@ -1006,25 +1035,61 @@ def get_number_of_shape(year, month, day):
         return (week_of_month - 1)*6 + day_of_week
 
 
-def createCalendarDates(eventsShape, year, month, increaseYear = False):
-
-    year = int(year)
+def createCalendarDates(slide, singleEventShapes, doubleEventShapes, month, increaseYear = False):
+    year = int(metaData.year)
     if increaseYear:
         year += 1
 
+    processFirstDayOffs(slide, singleEventShapes, doubleEventShapes, year, month)
+
     numOfDaysInMonth = calendar.monthrange(year, month)[1]
+    
+
     for i in range(1, numOfDaysInMonth+1):
         num_of_shape = get_number_of_shape(year, month, i) - 1
-        if num_of_shape < 0 or num_of_shape >= 99:
+        if num_of_shape < 0:
             continue
         else:
-            event_shape = eventsShape[num_of_shape]
-            date_text_frame = event_shape.dateShape.text_frame
-            p_date = date_text_frame.paragraphs[0]
-            p_date.alignment = PP_ALIGN.RIGHT
-            clearTextboxText(p_date, date_text_frame)
-            run_date = p_date.runs[0]
-            run_date.text =str(i) 
+            single_event_shape = singleEventShapes[num_of_shape]
+            double_event_shape = doubleEventShapes[num_of_shape]
+
+            slide.shapes.element.remove(single_event_shape.countOffShape.shape.element)
+            slide.shapes.element.remove(single_event_shape.spineBgOffShape.shape.element)
+            slide.shapes.element.remove(single_event_shape.bgOffShape.shape.element)
+
+            count_text_frame = single_event_shape.countShape.text_frame
+            count_paragraph = count_text_frame.paragraphs[0]
+            count_paragraph.alignment = PP_ALIGN.RIGHT
+            clearTextboxText(count_paragraph, count_text_frame)
+            run_count = count_paragraph.runs[0]
+            run_count.text =str(i) 
+
+            day_text_frame = single_event_shape.dayShape.text_frame
+            day_paragraph = day_text_frame.paragraphs[0]
+            day_paragraph.alignment = PP_ALIGN.RIGHT
+            clearTextboxText(day_paragraph, day_text_frame)
+            run_day = da_paragraph.runs[0]
+            run_day.text = hebrew_letter_of_day(get_week_day(i, month, year))
+
+            slide.shapes.element.remove(double_event_shape.countOffShape.shape.element)
+            slide.shapes.element.remove(double_event_shape.spineBgOffShape.shape.element)
+            slide.shapes.element.remove(double_event_shape.bgOffShape.shape.element)
+
+            count_text_frame = double_event_shape.countShape.text_frame
+            count_paragraph = count_text_frame.paragraphs[0]
+            count_paragraph.alignment = PP_ALIGN.RIGHT
+            clearTextboxText(count_paragraph, count_text_frame)
+            run_count = count_paragraph.runs[0]
+            run_count.text =str(i) 
+
+            day_text_frame = double_event_shape.dayShape.text_frame
+            day_paragraph = day_text_frame.paragraphs[0]
+            day_paragraph.alignment = PP_ALIGN.RIGHT
+            clearTextboxText(day_paragraph, day_text_frame)
+            run_day = da_paragraph.runs[0]
+            run_day.text = hebrew_letter_of_day(get_week_day(i, month, year)) #TODO: deal with arabic
+
+    processLastDayOffs(slide, singleEventShapes, doubleEventShapes, year, month)
 
 
 def findEventDay(event):
@@ -1035,6 +1100,88 @@ def findEventDay(event):
        return dateMiddleSplit[0].split('-')[2]
     return int(dateArray[0])
 
+def processFirstDayOffs(slide, singleEventShapes, doubleEventShapes, year, month):
+
+    num_of_days_in_previous_month = calendar.monthrange(year, month - 1)[1] if month != 1 else calendar.monthrange(year - 1, 12)[1]
+
+    if month != 1:
+        num_of_days_in_previous_month = calendar.monthrange(year, month - 1)[1]
+    else:
+        num_of_days_in_previous_month = calendar.monthrange(year - 1, 12)[1]
+
+
+    first_day_of_week1 = get_number_of_shape(year, month, 1) - 1
+
+
+    i = first_day_of_week - 1
+    j = num_of_days_in_previous_month
+    while i >= 0:
+        single_event_shape = singleEventShapes[i]
+        double_event_shape = doubleEventShapes[i]
+
+        count_off_text_frame = single_event_shape.countOffShape.text_frame
+        count_off_paragraph = count_off_text_frame.paragraphs[0]
+        count_off_paragraph.alignment = PP_ALIGN.RIGHT
+        clearTextboxText(count_off_paragraph, count_off_text_frame)
+        run_count = count_off_paragraph.runs[0]
+        run_count.text =str(j)
+
+        day_off_text_frame = single_event_shape.dayOffShape.text_frame
+        day_off_paragraph = day_off_text_frame.paragraphs[0]
+        day_off_paragraph.alignment = PP_ALIGN.RIGHT
+        clearTextboxText(day_off_paragraph, day_off_text_frame)
+        run_day_off = day_off_paragraph.runs[0]
+        run_day_off.text = hebrew_letter_of_day(get_week_day(j, month, year)) #TODO: deal with arabic
+
+        treat_off_shape(slide, single_event_shape, double_event_shape)
+
+        i -= 1
+        j -= 1
+
+
+
+def treat_off_shape(slide, single_event_shape, double_event_shape):
+
+    slide.shapes.element.remove(double_event_shape.shape.element)
+
+    slide.shapes.element.remove(single_event_shape.titleShape.shape.element)
+    slide.shapes.element.remove(single_event_shape.locationShape.shape.element)
+    slide.shapes.element.remove(single_event_shapes.priceShape.shape.element)
+    slide.shapes.element.remove(single_event_shape.tagSinglesShape.shape.element)
+    slide.shapes.element.remove(single_event_shape.tagTiulaShape.shape.element)
+    slide.shapes.element.remove(single_event_shape.tagYoloShape.shape.element)
+    slide.shapes.element.remove(single_event_shape.tagWomenShape.shape.element)
+    slide.shapes.element.remove(single_event_shape.tagGoldersShape.shape.element)
+    slide.shapes.element.remove(single_event_shape.tagKulturaShape.shape.element)
+    slide.shapes.element.remove(single_event_shape.countShape.shape.element)
+    slide.shapes.element.remove(single_event_shape.dayShape.shape.element)
+    slide.shapes.element.remove(single_event_shape.spineBgShape.shape.element)
+    slide.shapes.element.remove(single_event_shape.bgHighlightShape.shape.element)
+    slide.shapes.element.remove(single_event_shape.bgPicShape.shape.element)
+    slide.shapes.element.remove(single_event_shape.bgShape.shape.element)
+
+
+def get_week_day(day, month, year):
+    date = datetime.datetime(year, month, day)
+    return date.weekday()
+
+
+def hebrew_letter_of_day(weekday_int):
+    match weekday_int:
+        case 0:
+            return  "ב"
+        case 1:
+            return "ג"
+        case 2:
+            return "ד"
+        case 3:
+            return "ה"
+        case 4:
+            return "ו"
+        case 5:
+            raise Exception("Shouldn't get Saturday weekday. You're doing something wrong!")
+        case 6:
+            return "א"
 
 
 def writeTextToTextboxes(slide, singleEventShapes, doubleEventShapes, numOfMonth):
@@ -1042,10 +1189,10 @@ def writeTextToTextboxes(slide, singleEventShapes, doubleEventShapes, numOfMonth
     if metaData.increaseYear:
         year += 1
 
-    numOfDaysInMonth = calendar.monthrange(year, month)[1]
-    first_day_of_week1 = get_number_of_shape(year, month, 1) - 1
+    numOfDaysInMonth = calendar.monthrange(year, numOfMonth)[1]
+    first_day_of_week1 = get_number_of_shape(year, numOfMonth, 1) - 1
 
-    treat_off_shapes(singleEventShapes, doubleEventShapes)
+    
 
     day_in_month = 1
 
@@ -1053,7 +1200,7 @@ def writeTextToTextboxes(slide, singleEventShapes, doubleEventShapes, numOfMonth
         day_in_month += 1
     else:
         for i in range(first_day_of_week):
-            treat_off_shape(singleEventShapes[i],doubleEventShapes[i]) #TODO: please write me
+            treat_off_shape(singleEventShapes[i],doubleEventShapes[i]) #TODO: please write me, the implementation is in the createCalendarDates method
 
     single_event_shape, double_event_shape = None
 
