@@ -32,9 +32,10 @@ from enum import Enum
 firstMonthExcelEventsDictionary = {}
 secondMonthExcelEventsDictionary = {}
 
-excelEventsDictionary = {"firstMonth" : firstMonthExcelEventsDictionary, "secondMonth" : secondMonthExcelEventsDictionary}
+excelEventsDictionary = None
 
 def addToExcelEventDictionary(excelEvent, Dictionary):
+    eventDayInMonth = excelEvent.day
     if eventDayInMonth in Dictionary:
         if len(Dictionary[eventDayInMonth]) >= 2:
             raise Exception("בתאריך " + excelEvent.date + " קיימים מעל לשני אירועים") #TODO: check this case
@@ -72,9 +73,9 @@ class MetaData:
 # An object holding the fields of the Excel input event: date (datetime), day (string), hour (datetime.time), title (string), 
 # text1 (string), location (string), price (string), isFree (bool), isZoom (bool) and month (int) of a planned event 
 class ExcelEvent:
-    def __init__(self, date, day, hour, title, location, price, community, link, eventType):
+    def __init__(self, date, hour, title, location, price, community, link, eventType):
         self.date = date
-        self.day = day
+        self.day = getDay(date)
         self.hour = hour
         self.title = title
         self.location = location
@@ -349,6 +350,8 @@ def getEventsFromExcel(sheet):
     metaData.secondMonthInteger = excelMonths[1]
 
     addToExcelEventDictionary(excelEvent, dictionary)
+
+excelEventsDictionary = { metaData.firstMonthInteger : firstMonthExcelEventsDictionary, metaData.secondMonthInteger : secondMonthExcelEventsDictionary }
 
 
 
@@ -1011,15 +1014,11 @@ def processSecondSlide(slide, isFirstPresentation):
     writeTextToTextboxes(slide, single_event_shapes, double_event_shapes, "firstMonth")
 
 
-def clearTextboxText(first_paragrpah, text_frame):
-    if len(first_paragrpah.runs)>1:
-        for i in range(1,len(first_paragrpah.runs)):
-            first_paragrpah.runs[i].text=""
-    if len(text_frame.paragraphs)>1:
-        for i in range(1, len(text_frame.paragraphs)):
-            para = text_frame.paragraphs[i]
-            for j in range (0, len(para.runs)):
-                para.runs[j].text=""
+def clearTextboxText(text_frame):
+    for i in range(len(text_frame.paragraphs)):
+        para = text_frame.paragraphs[i]
+        for j in range (len(para.runs)):
+            para.runs[j].text=""
 
 def get_number_of_shape(year, month, day):
     numOfDaysInMonth = calendar.monthrange(year, month)[1]
@@ -1053,52 +1052,23 @@ def createCalendarDates(slide, singleEventShapes, doubleEventShapes, month, incr
             single_event_shape = singleEventShapes[num_of_shape]
             double_event_shape = doubleEventShapes[num_of_shape]
 
-            slide.shapes.element.remove(single_event_shape.countOffShape.shape.element)
-            slide.shapes.element.remove(single_event_shape.spineBgOffShape.shape.element)
-            slide.shapes.element.remove(single_event_shape.bgOffShape.shape.element)
+            removeShapeOffElements(single_event_shape)
+            writeTextToTextbox(single_event_shape.countShape.text_frame, str(i))
+            writeTextToTextbox(single_event_shape.dayShape.text_frame, hebrew_letter_of_day(get_week_day(i, month, year))) #TODO: deal with arabic
 
-            count_text_frame = single_event_shape.countShape.text_frame
-            count_paragraph = count_text_frame.paragraphs[0]
-            count_paragraph.alignment = PP_ALIGN.RIGHT
-            clearTextboxText(count_paragraph, count_text_frame)
-            run_count = count_paragraph.runs[0]
-            run_count.text =str(i) 
-
-            day_text_frame = single_event_shape.dayShape.text_frame
-            day_paragraph = day_text_frame.paragraphs[0]
-            day_paragraph.alignment = PP_ALIGN.RIGHT
-            clearTextboxText(day_paragraph, day_text_frame)
-            run_day = da_paragraph.runs[0]
-            run_day.text = hebrew_letter_of_day(get_week_day(i, month, year))
-
-            slide.shapes.element.remove(double_event_shape.countOffShape.shape.element)
-            slide.shapes.element.remove(double_event_shape.spineBgOffShape.shape.element)
-            slide.shapes.element.remove(double_event_shape.bgOffShape.shape.element)
-
-            count_text_frame = double_event_shape.countShape.text_frame
-            count_paragraph = count_text_frame.paragraphs[0]
-            count_paragraph.alignment = PP_ALIGN.RIGHT
-            clearTextboxText(count_paragraph, count_text_frame)
-            run_count = count_paragraph.runs[0]
-            run_count.text =str(i) 
-
-            day_text_frame = double_event_shape.dayShape.text_frame
-            day_paragraph = day_text_frame.paragraphs[0]
-            day_paragraph.alignment = PP_ALIGN.RIGHT
-            clearTextboxText(day_paragraph, day_text_frame)
-            run_day = da_paragraph.runs[0]
-            run_day.text = hebrew_letter_of_day(get_week_day(i, month, year)) #TODO: deal with arabic
+            removeShapeOffElements(double_event_shape)
+            writeTextToTextbox(double_event_shape.countShape.text_frame, str(i))
+            writeTextToTextbox(double_event_shape.dayShape.text_frame, hebrew_letter_of_day(get_week_day(i, month, year))) #TODO: deal with arabic
 
     processLastDayOffs(slide, singleEventShapes, doubleEventShapes, year, month)
 
 
-def findEventDay(event):
-    date = event.date
-    dateArray = date.split('.')
-    if len(dateArray) < 2:
-       dateMiddleSplit = date.split(' ')
-       return dateMiddleSplit[0].split('-')[2]
-    return int(dateArray[0])
+def removeShapeOffElements(shape):
+    slide.shapes.element.remove(shape.countOffShape.shape.element)
+    slide.shapes.element.remove(shape.dayOffShape.shape.element)
+    slide.shapes.element.remove(shape.spineBgOffShape.shape.element)
+    slide.shapes.element.remove(shape.bgOffShape.shape.element)
+
 
 def processFirstDayOffs(slide, singleEventShapes, doubleEventShapes, year, month):
 
@@ -1119,24 +1089,31 @@ def processFirstDayOffs(slide, singleEventShapes, doubleEventShapes, year, month
         single_event_shape = singleEventShapes[i]
         double_event_shape = doubleEventShapes[i]
 
-        count_off_text_frame = single_event_shape.countOffShape.text_frame
-        count_off_paragraph = count_off_text_frame.paragraphs[0]
-        count_off_paragraph.alignment = PP_ALIGN.RIGHT
-        clearTextboxText(count_off_paragraph, count_off_text_frame)
-        run_count = count_off_paragraph.runs[0]
-        run_count.text =str(j)
-
-        day_off_text_frame = single_event_shape.dayOffShape.text_frame
-        day_off_paragraph = day_off_text_frame.paragraphs[0]
-        day_off_paragraph.alignment = PP_ALIGN.RIGHT
-        clearTextboxText(day_off_paragraph, day_off_text_frame)
-        run_day_off = day_off_paragraph.runs[0]
-        run_day_off.text = hebrew_letter_of_day(get_week_day(j, month, year)) #TODO: deal with arabic
-
+        writeTextToTextbox(single_event_shape.countOffShape.text_frame, str(j))
+        writeTextToTextbox(single_event_shape.dayOffShape.text_frame, hebrew_letter_of_day(get_week_day(j, month, year))) #TODO: deal with arabic
+ 
         treat_off_shape(slide, single_event_shape, double_event_shape)
 
         i -= 1
         j -= 1
+
+
+def processLastDayOffs(slide, singleEventShapes, doubleEventShapes, year, month):
+
+    num_of_days_in_month = calendar.monthrange(year, month)[1]
+    last_shape_in_month_index = get_number_of_shape(year, month, num_of_days_in_month)
+
+    i = last_shape_in_month_index
+    j = 1
+    while i < 36:
+        single_event_shape = singleEventShapes[i]
+        double_event_shape = doubleEventShapes[i]
+
+        writeTextToTextbox(single_event_shape.countOffShape.text_frame, str(j))
+        writeTextToTextbox(single_event_shape.countOffShape.text_frame, hebrew_letter_of_day(get_week_day(j, month, year))) #TODO: deal with arabic
+
+        i += 1
+        j += 1
 
 
 
@@ -1184,241 +1161,207 @@ def hebrew_letter_of_day(weekday_int):
             return "א"
 
 
-def writeTextToTextboxes(slide, singleEventShapes, doubleEventShapes, numOfMonth):
+def writeTextToTextboxes(slide, singleEventShapes, doubleEventShapes, month, increaseYear = False):
     year = int(metaData.year)
-    if metaData.increaseYear:
+    if increaseYear:
         year += 1
 
     numOfDaysInMonth = calendar.monthrange(year, numOfMonth)[1]
-    first_day_of_week1 = get_number_of_shape(year, numOfMonth, 1) - 1
 
-    
-
-    day_in_month = 1
-
-    if first_day_of_week == 6: 
-        day_in_month += 1
-    else:
-        for i in range(first_day_of_week):
-            treat_off_shape(singleEventShapes[i],doubleEventShapes[i]) #TODO: please write me, the implementation is in the createCalendarDates method
 
     single_event_shape, double_event_shape = None
 
-    while day_in_month <= 36:
+    for i in range(1, numOfDaysInMonth + 1):
 
-        single_event_shape = singleEventShapes[i-1]
-        double_event_shepe = doubleEventShapes[i-1]
+        shape_index = get_number_of_shape(year, month, i) - 1
 
-        type = get_shape_type(i)
+        if shape_index >= 0:
+
+            single_event_shape = singleEventShapes[shape_index]
+            double_event_shepe = doubleEventShapes[shape_index]
+
+            shape_day_in_month = int(single_event_shape.countShape.text_frame.paragraphs[0].runs[0].text)
+
+            type = get_shape_type(shape_day_in_month, month)
+
+            match type:
+                case ShapeType.SINGLE:
+                    #TODO: check if peak, check if wide
+                    treatSingleShape(slide, single_event_shape, double_event_shape, shape_day_in_month, month)
+                case ShapeType.DOUBLE:
+                    #TODO: check if peak, check if wide
+                    treatDoubleShape(slide, single_event_shape, double_event_shape, shape_day_in_month, month)
+                case ShapeType.PIC:
+                    treatPicShape(slide, single_event_shape, double_event_shape)
 
 
 
 
-        event = monthsEvents[i]
-        day = findEventDay(event)
+        if isDouble == False and isFriday == False: # It's a standart single event
+            event_shape = single_event_shape
+            #deleteDoubleShape
+            slide.shapes.element.remove(double_event_shape.shape.element)
+
+            title_text_frame = event_shape.titleShape.text_frame
+            p_title = title_text_frame.paragraphs[0]
+            p_title.runs[0].text = ""
+            p_title.alignment = PP_ALIGN.RIGHT
+            clearTextboxText(p_title, title_text_frame)
+            run_title = p_title.runs[0]
+            run_title.text = event.hour + ": " + event.title
+
+            text1_text_frame = event_shape.text1Shape.text_frame
+            p_text1 = text1_text_frame.paragraphs[0]
+            p_text1.runs[0].text = ""
+            p_text1.alignment = PP_ALIGN.RIGHT
+            clearTextboxText(p_text1, text1_text_frame)
+            run_text1 = p_text1.runs[0]
+            run_text1.text = event.text1
+
+            loc_text_frame = event_shape.locShape.text_frame
+            p_loc = loc_text_frame.paragraphs[0]
+            p_loc.alignment = PP_ALIGN.RIGHT
+            clearTextboxText(p_loc, loc_text_frame)
+            run_loc = p_loc.runs[0]
+            run_loc.text = event.location
+
+            price_text_frame = event_shape.priceShape.text_frame
+            p_price = price_text_frame.paragraphs[0]
+            p_price.runs[0].text = ""
+            p_price.alignment = PP_ALIGN.RIGHT
+            clearTextboxText(p_price, price_text_frame)
+            run_price = p_price.runs[0]
+            if language == "1": 
+                if event.price != "" and event.price != FORBIDDEN_SENTENCE_HEBREW:
+                    run_price.text = event.price
+            else:
+                if event.price != "" and event.price != FORBIDDEN_SENTENCE_ARABIC:
+                    run_price.text = event.price
+
+            if event.isFree == False:
+                freeElement = event_shape.freeShape
+                event_shape.shape.shapes.element.remove(freeElement.element)
+
+            if event.isZoom == False:
+                zoomElement = event_shape.zoomShape
+                event_shape.shape.shapes.element.remove(zoomElement.element)
+
+        elif isDouble == False and isFriday == True and fridayEventsShape: # It's a Friday event
+            event_shape = friday_event_shape
+
+            date_text_frame = event_shape.dateShape.text_frame
+            p_date = date_text_frame.paragraphs[0]
+            p_date.runs[0].text = ""
+            p_date.alignment = PP_ALIGN.RIGHT
+            clearTextboxText(p_date, date_text_frame)
+            run_date = p_date.runs[0]
+            run_date.text = event.date #TODO: add the word Friday (in hebrew or arabic, according to the language parameter)
+
+            title_text_frame = event_shape.titleShape.text_frame
+            p_title = title_text_frame.paragraphs[0]
+            p_title.runs[0].text = ""
+            p_title.alignment = PP_ALIGN.RIGHT
+            clearTextboxText(p_title, title_text_frame)
+            run_title = p_title.runs[0]
+            run_title.text = event.hour + ": " + event.title
+
+            loc_text_frame = event_shape.locShape.text_frame
+            p_loc = loc_text_frame.paragraphs[0]
+            p_loc.alignment = PP_ALIGN.RIGHT
+            clearTextboxText(p_loc, loc_text_frame)
+            run_loc = p_loc.runs[0]
+            run_loc.text = event.location
+
+            price_text_frame = event_shape.priceShape.text_frame
+            p_price = price_text_frame.paragraphs[0]
+            p_price.runs[0].text = ""
+            p_price.alignment = PP_ALIGN.RIGHT
+            clearTextboxText(p_price, price_text_frame)
+            run_price = p_price.runs[0]
+            if language == "1": 
+                if event.price != "" and event.price != FORBIDDEN_SENTENCE_HEBREW:
+                    run_price.text = event.price
+            else:
+                if event.price != "" and event.price != FORBIDDEN_SENTENCE_ARABIC:
+                    run_price.text = event.price
+
+    elif isFriday == False: #isDouble == True, isFriday should be False, it's a double event
+        event_shape = double_event_shape
+        slide.shapes.element.remove(single_event_shape.shape.element)
 
 
+        title1_text_frame = event_shape.title1Shape.text_frame
+        p_title1 = title1_text_frame.paragraphs[0]
+        p_title1.runs[0].text = ""
+        p_title1.alignment = PP_ALIGN.RIGHT
+        clearTextboxText(p_title1, title1_text_frame)
+        run_title1 = p_title1.runs[0]
+        run_title1.text = event.hour + ": " + event.title
 
-        event_shape_num = get_number_of_shape(year, month, day)-1
-        if event_shape_num >= 99:
-            isFriday = True
-            fridayCount += 1
-            if fridayCount >= 6:
-                raise Exception("לא ניתן להזין מכל ל-5 ימי שישי בחודש")
+        title2_text_frame = event_shape.title2Shape.text_frame
+        p_title2 = title2_text_frame.paragraphs[0]
+        p_title2.runs[0].text = ""
+        p_title2.alignment = PP_ALIGN.RIGHT
+        clearTextboxText(p_title2, title2_text_frame)
+        run_title2 = p_title2.runs[0]
+        run_title2.text = next_event.hour + ": " + next_event.title
 
-        if (i+1) < len(monthsEvents):
-            next_event = monthsEvents[i+1]
-            next_event_day = findEventDay(next_event)
-            if next_event_day == day:
-                if (i+2) < len(monthsEvents):
-                    next_next_event = monthsEvents[i+2]
-                    next_next_event_day = findEventDay(next_next_event)
-                    if next_event_day == next_next_event_day:
-                        raise Exception("אין לכלול בקובץ האקסל מעל ל-2 ארועים באותו יום")
-                isDouble = True
-                if isFriday:
-                    raise Exception("ביום שישי \n"+str(day)+"."+str(month)+"\n"+"קיימים שניים או יותר ארועים. לא ניתן להזין מעל לארוע אחד בכל יום שישי")
-                i+=1
+        loc1_text_frame = event_shape.loc1Shape.text_frame
+        p_loc1 = loc1_text_frame.paragraphs[0]
+        p_loc1.alignment = PP_ALIGN.RIGHT
+        clearTextboxText(p_loc1, loc1_text_frame)
+        run_loc1 = p_loc1.runs[0]
+        run_loc1.text = event.location
 
-        if event_shape_num >= 99 and fridayEventsShape:
-            friday_event_shape = fridayEventsShape[fridayCount -1]
-        elif event_shape_num < 0:
-            single_event_shape = double_event_shape = None
-        elif event_shape_num >= 0 and event_shape_num < 99:
-            single_event_shape = singleEventsShape[event_shape_num]
-            single_event_shape.isTreated = True
-            double_event_shape = doubleEventsShape[event_shape_num]
-            double_event_shape.isTreated = True
+        loc2_text_frame = event_shape.loc2Shape.text_frame
+        p_loc2 = loc2_text_frame.paragraphs[0]
+        p_loc2.alignment = PP_ALIGN.RIGHT
+        clearTextboxText(p_loc2, loc2_text_frame)
+        run_loc2 = p_loc2.runs[0]
+        run_loc2.text = next_event.location
 
-        if event_shape_num < 0:
-            i+=1
-            continue
+        price1_text_frame = event_shape.price1Shape.text_frame
+        p_price1 = price1_text_frame.paragraphs[0]
+        p_price1.runs[0].text = ""
+        p_price1.alignment = PP_ALIGN.RIGHT
+        clearTextboxText(p_price1, price1_text_frame)
+        run_price1 = p_price1.runs[0]
+        if language == "1": 
+            if event.price != "" and event.price != FORBIDDEN_SENTENCE_HEBREW:
+                run_price1.text = event.price
         else:
-            if isDouble == False and isFriday == False: # It's a standart single event
-                event_shape = single_event_shape
-                #deleteDoubleShape
-                slide.shapes.element.remove(double_event_shape.shape.element)
+            if event.price != "" and event.price != FORBIDDEN_SENTENCE_ARABIC:
+                run_price1.text = event.price
 
-                title_text_frame = event_shape.titleShape.text_frame
-                p_title = title_text_frame.paragraphs[0]
-                p_title.runs[0].text = ""
-                p_title.alignment = PP_ALIGN.RIGHT
-                clearTextboxText(p_title, title_text_frame)
-                run_title = p_title.runs[0]
-                run_title.text = event.hour + ": " + event.title
+        if event.isFree == False:
+            free1Element = event_shape.free1Shape
+            event_shape.shape.shapes.element.remove(free1Element.element)
 
-                text1_text_frame = event_shape.text1Shape.text_frame
-                p_text1 = text1_text_frame.paragraphs[0]
-                p_text1.runs[0].text = ""
-                p_text1.alignment = PP_ALIGN.RIGHT
-                clearTextboxText(p_text1, text1_text_frame)
-                run_text1 = p_text1.runs[0]
-                run_text1.text = event.text1
+        if event.isZoom == False:
+            zoom1Element = event_shape.zoom1Shape
+            event_shape.shape.shapes.element.remove(zoom1Element.element)
 
-                loc_text_frame = event_shape.locShape.text_frame
-                p_loc = loc_text_frame.paragraphs[0]
-                p_loc.alignment = PP_ALIGN.RIGHT
-                clearTextboxText(p_loc, loc_text_frame)
-                run_loc = p_loc.runs[0]
-                run_loc.text = event.location
+        price2_text_frame = event_shape.price2Shape.text_frame
+        p_price2 = price2_text_frame.paragraphs[0]
+        p_price2.runs[0].text = ""
+        p_price2.alignment = PP_ALIGN.RIGHT
+        clearTextboxText(p_price2, price2_text_frame)
+        run_price2 = p_price2.runs[0]
+        if language == "1": 
+            if next_event.price != "" and next_event.price != FORBIDDEN_SENTENCE_HEBREW:
+                run_price2.text = next_event.price
+        else:
+            if next_event.price != "" and next_event.price != FORBIDDEN_SENTENCE_ARABIC:
+                run_price2.text = next_event.price
 
-                price_text_frame = event_shape.priceShape.text_frame
-                p_price = price_text_frame.paragraphs[0]
-                p_price.runs[0].text = ""
-                p_price.alignment = PP_ALIGN.RIGHT
-                clearTextboxText(p_price, price_text_frame)
-                run_price = p_price.runs[0]
-                if language == "1": 
-                    if event.price != "" and event.price != FORBIDDEN_SENTENCE_HEBREW:
-                        run_price.text = event.price
-                else:
-                    if event.price != "" and event.price != FORBIDDEN_SENTENCE_ARABIC:
-                        run_price.text = event.price
+        if next_event.isFree == False:
+            run_price2.text = next_event.price
+            free2Element = event_shape.free2Shape
+            event_shape.shape.shapes.element.remove(free2Element.element)
 
-                if event.isFree == False:
-                    freeElement = event_shape.freeShape
-                    event_shape.shape.shapes.element.remove(freeElement.element)
-
-                if event.isZoom == False:
-                    zoomElement = event_shape.zoomShape
-                    event_shape.shape.shapes.element.remove(zoomElement.element)
-
-            elif isDouble == False and isFriday == True and fridayEventsShape: # It's a Friday event
-                    event_shape = friday_event_shape
-
-                    date_text_frame = event_shape.dateShape.text_frame
-                    p_date = date_text_frame.paragraphs[0]
-                    p_date.runs[0].text = ""
-                    p_date.alignment = PP_ALIGN.RIGHT
-                    clearTextboxText(p_date, date_text_frame)
-                    run_date = p_date.runs[0]
-                    run_date.text = event.date #TODO: add the word Friday (in hebrew or arabic, according to the language parameter)
-
-                    title_text_frame = event_shape.titleShape.text_frame
-                    p_title = title_text_frame.paragraphs[0]
-                    p_title.runs[0].text = ""
-                    p_title.alignment = PP_ALIGN.RIGHT
-                    clearTextboxText(p_title, title_text_frame)
-                    run_title = p_title.runs[0]
-                    run_title.text = event.hour + ": " + event.title
-
-                    loc_text_frame = event_shape.locShape.text_frame
-                    p_loc = loc_text_frame.paragraphs[0]
-                    p_loc.alignment = PP_ALIGN.RIGHT
-                    clearTextboxText(p_loc, loc_text_frame)
-                    run_loc = p_loc.runs[0]
-                    run_loc.text = event.location
-
-                    price_text_frame = event_shape.priceShape.text_frame
-                    p_price = price_text_frame.paragraphs[0]
-                    p_price.runs[0].text = ""
-                    p_price.alignment = PP_ALIGN.RIGHT
-                    clearTextboxText(p_price, price_text_frame)
-                    run_price = p_price.runs[0]
-                    if language == "1": 
-                        if event.price != "" and event.price != FORBIDDEN_SENTENCE_HEBREW:
-                            run_price.text = event.price
-                    else:
-                        if event.price != "" and event.price != FORBIDDEN_SENTENCE_ARABIC:
-                            run_price.text = event.price
-
-            elif isFriday == False: #isDouble == True, isFriday should be False, it's a double event
-                event_shape = double_event_shape
-                slide.shapes.element.remove(single_event_shape.shape.element)
-
-
-                title1_text_frame = event_shape.title1Shape.text_frame
-                p_title1 = title1_text_frame.paragraphs[0]
-                p_title1.runs[0].text = ""
-                p_title1.alignment = PP_ALIGN.RIGHT
-                clearTextboxText(p_title1, title1_text_frame)
-                run_title1 = p_title1.runs[0]
-                run_title1.text = event.hour + ": " + event.title
-
-                title2_text_frame = event_shape.title2Shape.text_frame
-                p_title2 = title2_text_frame.paragraphs[0]
-                p_title2.runs[0].text = ""
-                p_title2.alignment = PP_ALIGN.RIGHT
-                clearTextboxText(p_title2, title2_text_frame)
-                run_title2 = p_title2.runs[0]
-                run_title2.text = next_event.hour + ": " + next_event.title
-
-                loc1_text_frame = event_shape.loc1Shape.text_frame
-                p_loc1 = loc1_text_frame.paragraphs[0]
-                p_loc1.alignment = PP_ALIGN.RIGHT
-                clearTextboxText(p_loc1, loc1_text_frame)
-                run_loc1 = p_loc1.runs[0]
-                run_loc1.text = event.location
-
-                loc2_text_frame = event_shape.loc2Shape.text_frame
-                p_loc2 = loc2_text_frame.paragraphs[0]
-                p_loc2.alignment = PP_ALIGN.RIGHT
-                clearTextboxText(p_loc2, loc2_text_frame)
-                run_loc2 = p_loc2.runs[0]
-                run_loc2.text = next_event.location
-
-                price1_text_frame = event_shape.price1Shape.text_frame
-                p_price1 = price1_text_frame.paragraphs[0]
-                p_price1.runs[0].text = ""
-                p_price1.alignment = PP_ALIGN.RIGHT
-                clearTextboxText(p_price1, price1_text_frame)
-                run_price1 = p_price1.runs[0]
-                if language == "1": 
-                    if event.price != "" and event.price != FORBIDDEN_SENTENCE_HEBREW:
-                        run_price1.text = event.price
-                else:
-                    if event.price != "" and event.price != FORBIDDEN_SENTENCE_ARABIC:
-                        run_price1.text = event.price
-
-                if event.isFree == False:
-                    free1Element = event_shape.free1Shape
-                    event_shape.shape.shapes.element.remove(free1Element.element)
-
-                if event.isZoom == False:
-                    zoom1Element = event_shape.zoom1Shape
-                    event_shape.shape.shapes.element.remove(zoom1Element.element)
-
-                price2_text_frame = event_shape.price2Shape.text_frame
-                p_price2 = price2_text_frame.paragraphs[0]
-                p_price2.runs[0].text = ""
-                p_price2.alignment = PP_ALIGN.RIGHT
-                clearTextboxText(p_price2, price2_text_frame)
-                run_price2 = p_price2.runs[0]
-                if language == "1": 
-                    if next_event.price != "" and next_event.price != FORBIDDEN_SENTENCE_HEBREW:
-                        run_price2.text = next_event.price
-                else:
-                    if next_event.price != "" and next_event.price != FORBIDDEN_SENTENCE_ARABIC:
-                        run_price2.text = next_event.price
-
-                if next_event.isFree == False:
-                    run_price2.text = next_event.price
-                    free2Element = event_shape.free2Shape
-                    event_shape.shape.shapes.element.remove(free2Element.element)
-
-                if next_event.isZoom == False:
-                    zoom2Element = event_shape.zoom2Shape
-                    event_shape.shape.shapes.element.remove(zoom2Element.element)
+        if next_event.isZoom == False:
+            zoom2Element = event_shape.zoom2Shape
+            event_shape.shape.shapes.element.remove(zoom2Element.element)
 
             i+=1
 
@@ -1476,8 +1419,8 @@ def writeTextToTextboxes(slide, singleEventShapes, doubleEventShapes, numOfMonth
         for i in range(fridayCount, 5):
             slide.shapes.element.remove(fridayEventsShape[i].shape.element)
 
-def get_shape_type(day_in_month, numOfMonth):
-    excelEvents = excelEventsDictionary[numOfMonth]
+def get_shape_type(day_in_month, month):
+    excelEvents = excelEventsDictionary[month]
     if day_in_month in excelEvents:
         excelEventArray = excelEvent[dayInMonth]
         if len(excelEventArray) == 1:
@@ -1485,14 +1428,63 @@ def get_shape_type(day_in_month, numOfMonth):
         elif len(excelEventArray) == 2:
             return ShapeType.DOUBLE
     else:
-        if is_day_off(day_in_month):
-            return ShapeType.OFF
-        else:
-            return ShapeType.PIC
+        return ShapeType.PIC
 
 
-def is_day_off(day_in_month)
-    return False #TODO: implement me please
+def treatSingleShape(slide, single_event_shape, double_event_shape, shape_day_in_month, month):
+    excelEvents = excelEventsDictionary[month]
+    excelEvent = excelEvents[shape_day_in_month]
+
+    slide.shapes.element.remove(double_event_shape.shape.element)
+    treatTags(excelEvent, single_event_shape) #TODO: implement me
+
+    if excelEvent.shapeType is shapeType.REGULAR:
+        slide.shapes.element.remove(single_event_shape.bgPicShape.shape.element)
+        slide.shapes.element.remove(single_event_shape.bgHighlightShape.shape.element)
+    elif excelEvent.shapeType is shapeType.WIDE:
+        slide.shapes.element.remove(single_event_shape.bgPicShape.shape.element)
+        slide.shapes.element.remove(single_event_shape.bgShape.shape.element)
+
+    writeTextToTextbox(single_event_shape.titleShape.text_frame, excelEvent.hour + " - " + excelEvent.title) #TODO: make the title an hyperlink
+    writeTextToTextbox(single_event_shape.locationShape.text_frame, excelEvent.location)
+    writeTextToTextbox(single_event_shape.priceShape.text_frame, excelEvent.price)
+
+
+def treatDoubleShape(slide, single_event_shape, double_event_shape, shape_day_in_month, month):
+    excelEvents = excelEventsDictionary[month]
+    firstExcelEvent = excelEvents[shape_day_in_month][0]
+    secondExcelEvent = excelEvents[shape_day_in_month][1]
+
+    slide.shapes.element.remove(single_event_shape.shape.element)
+    treatTags(firstExcelEvent, secondExcelEvent, double_event_shape) #TODO: implement me
+
+    slide.shapes.element.remove(double_event_shape.bgPicShape.shape.element)
+
+    writeTextToTextbox(double_event_shape.titleShape1.text_frame, firstExcelEvent.hour + " - " + firstExcelEvent.title) #TODO: make the title an hyperlink
+    writeTextToTextbox(double_event_shape.locationShape1.text_frame, firstExcelEvent.location)
+    writeTextToTextbox(double_event_shape.priceShape1.text_frame, firstExcelEvent.price)
+    writeTextToTextbox(double_event_shape.titleShape2.text_frame, secondExcelEvent.hour + " - " + secondExcelEvent.title) #TODO: make the title an hyperlink
+    writeTextToTextbox(double_event_shape.locationShape2.text_frame, secondExcelEvent.location)
+    writeTextToTextbox(double_event_shape.priceShape2.text_frame, secondExcelEvent.price)
+
+
+def treatPicShape(slide, single_event_shape, double_event_shape):
+    slide.shapes.element.remove(double_event_shape.shape.element)
+    slide.shapes.element.remove(single_event_shape.bgShape.shape.element)
+    slide.shapes.element.remove(single_event_shape.bgHighlightShapeShape.shape.element)
+    slide.shapes.element.remove(single_event_shape.titleShape.shape.element)
+    slide.shapes.element.remove(single_event_shape.locationShape.shape.element)
+    slide.shapes.element.remove(single_event_shape.priceShape.shape.element)
+    #TODO: implement random picture for bgPicShape
+
+
+def writeTextToTextbox(shape_text_frame, text):
+    text_frame_paragraphs = shape_text_frame.paragraphs
+    clearTextboxText(text_frame_paragraph)
+    text_frame_paragraph = shape_text_frame.paragraphs[0]
+    text_frame_paragraph.alignment = PP_ALIGN.RIGHT
+    run = text_frame_paragraph.runs[0]
+    run.text = text
 
 
 def main():
