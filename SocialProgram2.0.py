@@ -31,6 +31,8 @@ from enum import Enum
 
 firstMonthExcelEventsDictionary = {}
 secondMonthExcelEventsDictionary = {}
+firstMonthPeakExcelEventsDictionary = {}
+secondMonthPeakExcelEventsDictionary = {}
 
 excelEventsDictionary = None
 
@@ -52,13 +54,14 @@ FORBIDDEN_SENTENCE_ARABIC = "السعر: شيكل"
 
 
 class MetaData:
-    def __init__ (self, firstMonthInteger = None, secondMonthInteger = None, firstMonthName = None, secondMonthName = None, year = None, contactName = None, contactPhone = None, language = None,
+    def __init__ (self, firstMonthInteger = None, secondMonthInteger = None, firstMonthName = None, secondMonthName = None, zone = None, year = None, contactName = None, contactPhone = None, language = None,
     splitYear = False,
         hasCacheFile = False):
         self.firstMonthInteger = firstMonthInteger
         self.secondMonthInteger = secondMonthInteger
         self.firstMonthName = firstMonthName
         self.secondMonthName = secondMonthName
+        self.zone = zone
         self.year=year
         self.contactName = contactName
         self.contactPhone = contactPhone
@@ -103,16 +106,46 @@ class Community(Enum):
     GOLDERS = 5
     KULTURA = 6
 
+class Communities:
+    SinglesString = "סינגלס"
+    Singles = Community.SINGLES
+    TiulaString = "טיולא"
+    Tiula = Community.TIULA
+    YoloString = "YOLO"
+    Yolo = Community.YOLO
+    WomenString = "נשים"
+    Women = Community.WOMEN
+    GoldersString = "גולדרס"
+    Golders = Community.GOLDERS
+    KulturaString = "קולטורה"
+    Kultura = Community.KULTURA
+
+    communitiesArray = None
+    communitiesStringArray = None
+
+    def __init__(self):
+        communitiesStringArray = [attr for atrr in dir(Communities) if (not attr.startswith('__') and "String" in attr)]
+        communitiesArray = [attr for atrr in dir(Communities) if (not attr.startswith('__') and not "String" in attr)]
+
 class EventType(Enum):
     REGULAR = 1
     WIDE = 2
     PEAK = 3
+
+class EventTypes:
+    def __init__(self):
+        self.wideString = "רוחבי"
+        self.wide = EventType.WIDE
+        self.peakString = "ארוע שיא"
+        self.peak = EventType.PEAK
 
 class ShapeType(Enum):
     SINGLE = 1
     DOUBLE = 2
     PIC = 3
     OFF = 4
+
+
     
 
 # An object holding the different shapes of the input powerpoint event shape: dateShape (shape), dayShape (shape), hourShape (shape), titleShape (shape), 
@@ -279,6 +312,7 @@ def getDay(eventDate):
 def getEventsFromExcel(sheet):
     excelMonths = []
     dictionary = firstMonthExcelEventsDictionary
+    peakEventsDictionary = firstMonthPeakExcelEventsDictionary
     # Iterate the loop to read the cell values
     # Ignore first row with column titles
     for rowIndex in range(2, sheet.max_row+1):
@@ -296,16 +330,6 @@ def getEventsFromExcel(sheet):
             raise Exception("שורה \n"+str(rowIndex)+"\n עמודה: \n"+str(2)+"\nהערך ריק ")
 
         hourValue = sheet.cell(row=rowIndex,column=3).value
-        #May throw: ValueError: time data does not match format
-        # try: 
-        #     if isinstance(hourValue, datetime.time):
-        #         hour = hourValue.strftime("%H:%M")
-        #     elif isinstance(hourValue, datetime.datetime):
-        #         hour = hourValue.time().strftime("%H:%M")
-        #     else:
-        #         hour = str(hourValue)
-        # except ValueError:
-        #     raise Exception("שורה \n"+str(rowIndex)+"\n עמודה: \n"+str(3)+"\nהערך ריק או לא תואם את התבנית:\n "+"HH:MM")
 
         title = sheet.cell(row=rowIndex,column=4).value
         if title is None:
@@ -332,11 +356,18 @@ def getEventsFromExcel(sheet):
         excelEvent = ExcelEvent(str(date), str(hourValue), title, location, price, community, link, eventType)
 
         if excelEvent.month not in excelMonths:
-            if len(excelMonths) == 1:
+            excelMonths.append(excelEvent.month)
+            if len(excelMonths) == 2:
                 dictionary = secondMonthExcelEventsDictionary
-             if len(excelMonths) >= 2:
+                peakEventsDictionary = secondMonthPeakExcelEventsDictionary
+            elif len(excelMonths) > 2:
                 raise Exception("קובץ האקסל מכיל מעל לשני חודשים")
-             excelMonths.append(excelEvent.month)
+
+        if excelEvent.eventType is EventType.PEAK:
+            peakEventsDictionary[excelEvent.Community] = excelEvent
+        else:
+            addToExcelEventDictionary(excelEvent, dictionary)
+             
 
     if len(excelMonths) < 2:
         raise Exception("קובץ האקסל מכיל פחות משני חודשים")
@@ -349,9 +380,7 @@ def getEventsFromExcel(sheet):
     metaData.firstMonthInteger = excelMonths[0]
     metaData.secondMonthInteger = excelMonths[1]
 
-    addToExcelEventDictionary(excelEvent, dictionary)
-
-excelEventsDictionary = { metaData.firstMonthInteger : firstMonthExcelEventsDictionary, metaData.secondMonthInteger : secondMonthExcelEventsDictionary }
+    excelEventsDictionary = { metaData.firstMonthInteger : firstMonthExcelEventsDictionary, metaData.secondMonthInteger : secondMonthExcelEventsDictionary }
 
 
 
@@ -364,13 +393,35 @@ def rowIsEmpty(sheet, rowIndex, maxColIndex):
                 return False
             return True
 
-def getEventTypeFromString(eventTypeString):
-    #TODO
-    pass
 
 def getCommunityFromString(communityString):
-    #TODO
-    pass
+    communities = Communities()
+    if communities.SinglesString in communityString:
+        return communities.Singles
+    elif communities.TiulaString in communityString:
+        return communities.Tiula
+    elif communities.YoloString in communityString:
+        return communities.Yolo
+    elif communities.WomenString in communityString:
+        return communities.Women
+    elif communities.GoldersString in communityString:
+        return communities.Golders
+    elif communities.KulturaString in communityString:
+        return communities.Kultura
+    else:
+        return None
+
+
+def getEventTypeFromString(eventTypeString):
+    eventTypes = EventTypes()
+    if eventTypes.wideString in eventTypeString:
+        return eventType.wide
+    elif eventTypes.peakString in eventTypeString:
+        return eventType.peak
+    else:
+        return None
+
+
 
  
 # get_text_boxes(slide, months)
@@ -386,6 +437,7 @@ def getCommunityFromString(communityString):
 
 def get_slide_shapes(slide):
     singles, doubles, header_shape = find_groups(slide.shapes)
+    header_shape_dict = {}
 
     singles = reversed(singles) #Maybe unnecessary
     doubles = reversed(doubles)
@@ -544,6 +596,14 @@ def get_slide_shapes(slide):
             elif shape.name == 'BG':
                 double_bgs.append(shape)
 
+    for shape in iter_textable_shapes(header_shape):
+        if shape.name == 'ZONE':
+            header_shape_dict["zoneShape"] = shape
+        elif shape.name == 'MONTH':
+            header_shape_dict["monthShape"] = shape
+        elif shape.name == 'YEAR':
+            header_shape_dict["yearShape"] = shape
+
 
     # textable_shapes = list(iter_textframed_shapes(slide.shapes))
     # ordered_textable_shapes = sorted(
@@ -571,6 +631,7 @@ def get_slide_shapes(slide):
     # zoom = createRightOrder(zoom)
     #shapes = sorted(shapes, key=lambda x: get_int_from_shape_name(x.name))
 
+
     single_event_shapes = []
     double_event_shapes = []
 
@@ -589,7 +650,7 @@ def get_slide_shapes(slide):
             double_spine_bg_offs[i],double_bg_highlights[i], double_bg_pics[i], double_bg_offs[i], double_bgs[i], double_shapes[i])
         double_event_shapes.append(double_event_shape)
 
-    return single_event_shapes, double_event_shapes, header_shape
+    return single_event_shapes, double_event_shapes, header_shape_dict
 
 
 # get_int_from_shape_name(shape_name)
@@ -948,7 +1009,7 @@ def createPptxPlans(month1, month2, area, contact, year, language):
         metaData.firstMonthName = month1
         metaData.secondMonthName = month2
         metaData.year = year
-        metaData.area = area
+        metaData.zone = area
         metaData.language = language
 
 
@@ -997,21 +1058,21 @@ def processSecondSlide(slide, isFirstPresentation):
     single_event_shapes, double_event_shapes, header_shape = get_slide_shapes(slide)
 
     calendar.setfirstweekday(6)
+
+    month = None 
+    if isFirstPresentation:
+        month = metaData.firstMonthInteger
+    else:
+        month = metaData.secondMonthInteger
     
     if isFirstPresentation:
 
         calendar.setfirstweekday(6)
 
-        createCalendarDates(single_event_shapes, double_event_shapes, metaData.firstMonthInteger)
+        createCalendarDates(single_event_shapes, double_event_shapes, month)
 
-        writeTextToTextboxes(slide, single_event_shapes, double_event_shapes)    
+        writeTextToTextboxes(slide, single_event_shapes, double_event_shapes, header_shape, month)
 
-
-
-
-        
-
-    writeTextToTextboxes(slide, single_event_shapes, double_event_shapes, "firstMonth")
 
 
 def clearTextboxText(text_frame):
@@ -1161,7 +1222,7 @@ def hebrew_letter_of_day(weekday_int):
             return "א"
 
 
-def writeTextToTextboxes(slide, singleEventShapes, doubleEventShapes, month, increaseYear = False):
+def writeTextToTextboxes(slide, singleEventShapes, doubleEventShapes, headerShape, month, increaseYear = False):
     year = int(metaData.year)
     if increaseYear:
         year += 1
@@ -1186,13 +1247,15 @@ def writeTextToTextboxes(slide, singleEventShapes, doubleEventShapes, month, inc
 
             match type:
                 case ShapeType.SINGLE:
-                    #TODO: check if peak, check if wide
                     treatSingleShape(slide, single_event_shape, double_event_shape, shape_day_in_month, month)
                 case ShapeType.DOUBLE:
-                    #TODO: check if peak, check if wide
                     treatDoubleShape(slide, single_event_shape, double_event_shape, shape_day_in_month, month)
                 case ShapeType.PIC:
                     treatPicShape(slide, single_event_shape, double_event_shape)
+
+    writeTextToTextbox(header_shape[zone].text_frame, metaData.area)
+    writeTextToTextbox(header_shape[month].text_frame, metaData.month)
+    writeTextToTextbox(header_shape[year].text_frame, metaData.year)
 
 
 
@@ -1485,6 +1548,30 @@ def writeTextToTextbox(shape_text_frame, text):
     text_frame_paragraph.alignment = PP_ALIGN.RIGHT
     run = text_frame_paragraph.runs[0]
     run.text = text
+
+
+def treatTags(slide, excelEvent, secondExcelEvent = None, single_event_shape, double_event_shape = None):
+    excelEventCommunity = excelEvent.community
+    secondExcelEventCommunity = None
+    if secondExcelEvent != None:
+        secondExcelEventCommunity = secondExcelEvent.community
+
+    allCommunities = Communities.communitiesArray
+    allCommunitiesStrings = Communities.communitiesStringArray
+
+    for i in range(len(allCommunities)):
+        if double_event_shape == None:
+            if allCommunities[i] is not excelEventCommunity:
+                commString = allCommunitiesStrings[i]
+                suffix = "1" if double_event_shape != None else ""
+                attrToRemove = getattr(singleEventsShape, "tag" + commString.removesuffix('String') + suffix)
+                slide.shapes.element.remove(attrToRemove.shape.element)
+        if double_event_shape != None:
+            if allCommunities[i] is not secondExcelEventCommunity:
+                commString = allCommunitiesStrings[i]
+                suffix = 2
+                attrToRemove = getattr(singleEventsShape, "tag" + commString.removesuffix('String') + suffix)
+                slide.shapes.element.remove(attrToRemove.shape.element)
 
 
 def main():
