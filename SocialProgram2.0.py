@@ -33,15 +33,16 @@ firstMonthExcelEventsDictionary = {}
 secondMonthExcelEventsDictionary = {}
 firstMonthPeakExcelEventsDictionary = {}
 secondMonthPeakExcelEventsDictionary = {}
+peakExcelEventsDictionary = {}
 
 excelEventsDictionary = None
 
 def addToExcelEventDictionary(excelEvent, Dictionary):
-    eventDayInMonth = excelEvent.day
+    eventDayInMonth = excelEvent.dayInMonth
     if eventDayInMonth in Dictionary:
-        if len(Dictionary[eventDayInMonth]) >= 2:
-            raise Exception("בתאריך " + excelEvent.date + " קיימים מעל לשני אירועים") #TODO: check this case
         Dictionary[eventDayInMonth].append(excelEvent)
+        if len(Dictionary[eventDayInMonth]) > 2:
+            raise Exception("בתאריך " + excelEvent.date + " קיימים מעל לשני אירועים") #TODO: check this case
     else:
         Dictionary[eventDayInMonth] = [excelEvent]
 
@@ -54,9 +55,8 @@ FORBIDDEN_SENTENCE_ARABIC = "السعر: شيكل"
 
 
 class MetaData:
-    def __init__ (self, firstMonthInteger = None, secondMonthInteger = None, firstMonthName = None, secondMonthName = None, zone = None, year = None, contactName = None, contactPhone = None, language = None,
-    splitYear = False,
-        hasCacheFile = False):
+    def __init__(self, firstMonthInteger = None, secondMonthInteger = None, firstMonthName = None, secondMonthName = None, zone = None, year = None, contactName = None, contactPhone = None,
+        language = None, increaseYear = False, hasCacheFile = False):
         self.firstMonthInteger = firstMonthInteger
         self.secondMonthInteger = secondMonthInteger
         self.firstMonthName = firstMonthName
@@ -66,10 +66,46 @@ class MetaData:
         self.contactName = contactName
         self.contactPhone = contactPhone
         self.language = language
-        self.splitYear = splitYear
+        self.increaseYear = increaseYear
         self.hasCacheFile = hasCacheFile
-        self.isFirstPresentation = True
-        self.isSecondPresentation = False
+
+
+
+class FirstSlideShapes:
+    def __init__(self, monthsShape = None, yearShape = None, month1Shape = None, month2Shape = None, Singles1TitleShape = None, Singles1TextShape = None, YOLO1TitleShape = None, YOLO1TextShape = None,
+        Kultura1TitleShape = None, Kultura1TextShape = None, Tiula1TitleShape = None, Tiula1TextShape = None, Golders1TitleShape = None, Golders1TextShape = None, Women1TitleShape = None,
+        Women1TextShape = None, Singles2TitleShape = None, Singles2TextShape = None, YOLO2TitleShape = None, YOLO2TextShape = None, Kultura2TitleShape = None, Kultura2TextShape = None,
+        Tiula2TitleShape = None, Tiula2TextShape = None, Golders2TitleShape = None, Golders2TextShape = None, Women2TitleShape = None, Women2TextShape = None, contactShape = None):
+        self.monthsShape = monthsShape
+        self.yearShape = yearShape
+        self.month1Shape = month1Shape
+        self.month2Shape = month2Shape
+        self.Singles1TitleShape = Singles1TitleShape
+        self.Singles1TextShape = Singles1TextShape
+        self.YOLO1TitleShape = YOLO1TitleShape
+        self.YOLO1TextShape = YOLO1TextShape
+        self.Kultura1TitleShape = Kultura1TitleShape
+        self.Kultura1TextShape = Kultura1TextShape
+        self.Tiula1TitleShape = Tiula1TitleShape
+        self.Tiula1TextShape = Tiula1TextShape
+        self.Golders1TitleShape = Golders1TitleShape
+        self.Golders1TextShape = Golders1TextShape
+        self.Women1TitleShape = Women1TitleShape
+        self.Women1TextShape = Women1TextShape
+        self.Singles2TitleShape = Singles2TitleShape
+        self.Singles2TextShape = Singles2TextShape
+        self.YOLO2TitleShape = YOLO2TitleShape
+        self.YOLO2TextShape = YOLO2TextShape
+        self.Kultura2TitleShape = Kultura2TitleShape
+        self.Kultura2TextShape = Kultura2TextShape
+        self.Tiula2TitleShape = Tiula2TitleShape
+        self.Tiula2TextShape = Tiula2TextShape
+        self.Golders2TitleShape = Golders2TitleShape
+        self.Golders2TextShape = Golders2TextShape
+        self.Women2TitleShape = Women2TitleShape
+        self.Women2TextShape = Women2TextShape
+        self.contactShape = contactShape
+
 
 
 
@@ -78,7 +114,7 @@ class MetaData:
 class ExcelEvent:
     def __init__(self, date, hour, title, location, price, community, link, eventType):
         self.date = date
-        self.day = getDay(date)
+        self.day = ""
         self.hour = hour
         self.title = title
         self.location = location
@@ -89,14 +125,6 @@ class ExcelEvent:
         self.month = getMonth(date)
         self.dayInMonth = getDay(date)
 
-    #Comparison function, comparing Event objects
-    #by date and hour (if dates are equal)
-    def __lt__(self, other):
-        return self.date.month <= other.date.month
-
-    def __str__(self):
-        return "date = %s, hour = %s, title = %s, month = %s"%(self.date.date(),self.hour, self.title, str(self.month))
-
 
 class Community(Enum):
     SINGLES = 1
@@ -106,26 +134,16 @@ class Community(Enum):
     GOLDERS = 5
     KULTURA = 6
 
-class Communities:
-    SinglesString = "סינגלס"
-    Singles = Community.SINGLES
-    TiulaString = "טיולא"
-    Tiula = Community.TIULA
-    YoloString = "YOLO"
-    Yolo = Community.YOLO
-    WomenString = "נשים"
-    Women = Community.WOMEN
-    GoldersString = "גולדרס"
-    Golders = Community.GOLDERS
-    KulturaString = "קולטורה"
-    Kultura = Community.KULTURA
-
-    communitiesArray = None
-    communitiesStringArray = None
-
+class ExcelCommunitiesStrings:
     def __init__(self):
-        communitiesStringArray = [attr for atrr in dir(Communities) if (not attr.startswith('__') and "String" in attr)]
-        communitiesArray = [attr for atrr in dir(Communities) if (not attr.startswith('__') and not "String" in attr)]
+        self.Singles = "סינגלס"
+        self.Tiula = "טיולא"
+        self.Yolo = "YOLO"
+        self.Women = "נשים"
+        self.Golders = "גולדרס"
+        self.Kultura = "קולטורה"
+        self.excelCommunitiesStringsArray = [item[1] for item in vars(self).items() if not (item[0] == "excelCommunitiesStringsArray" or item == "communitiesStringsArray")]
+        self.communitiesStringsArray = [item[0] for item in vars(self).items() if not (item[0] == "excelCommunitiesStringsArray" or item == "communitiesStringsArray")]
 
 class EventType(Enum):
     REGULAR = 1
@@ -134,7 +152,7 @@ class EventType(Enum):
 
 class EventTypes:
     def __init__(self):
-        self.wideString = "רוחבי"
+        self.wideString = "אירוע מרחבי"
         self.wide = EventType.WIDE
         self.peakString = "ארוע שיא"
         self.peak = EventType.PEAK
@@ -177,7 +195,7 @@ class SingleEventShape:
 
 class DoubleEventShape:
     def __init__(self, titleShape1, locationShape1, priceShape1, tagSingles1, tagTiula1, tagYolo1, tagWomen1, tagGolders1, tagKultura1,
-     titleShape2, locationShape2, priceShape2, tagSingles2, tagTiula2, tagYolo2, tagWomen2, tagGolders2, tagKultura2, countShape, countShape, countOffShape, dayShape, dayOffShape, 
+     titleShape2, locationShape2, priceShape2, tagSingles2, tagTiula2, tagYolo2, tagWomen2, tagGolders2, tagKultura2, countShape, countOffShape, dayShape, dayOffShape, 
      spineBgShape, spineBgOffShape, bgHighlightShape, bgPicShape, bgOffShape, bgShape, shape, isTreated = False):
         self.titleShape1 = titleShape1
         self.locationShape1 = locationShape1
@@ -242,7 +260,6 @@ def readExcel(excel_name):
     
         getEventsFromExcel(sheet)
           
-        return splitExcelEventsByMonths(events)
     except CellCoordinatesException:
         raise Exception("שגיאת המרה בין ערך נומרי ל-A1-style")
     except IllegalCharacterError:
@@ -257,9 +274,9 @@ def splitExcelEventsByMonths(events):
     second_months_events = []
 
     for event in events:
-        if event.month == metaData.firstMonthInteger:
+        if event.month == MetaData.firstMonthInteger:
             first_months_events.append(event)
-        elif event.month == metaData.secondMonthInteger:
+        elif event.month == MetaData.secondMonthInteger:
             second_months_events.append(event)
         else:
             raise Exception("קובץ האקסל מכיל מעל לשני חודשיים")
@@ -284,18 +301,18 @@ def checkDateStringValidity(inputString):
     return False
 
 def getMonth(eventDate):
-    eventDategArr = eventDate.split('.')
-    if len(eventDategArr) < 2:
+    eventDateArr = eventDate.split('.')
+    if len(eventDateArr) < 2:
        eventDateMiddleSplit = eventDate.split(' ')
-       eventDategArr = eventDateMiddleSplit[0].split('-')
-    return int(eventStringArr[1])
+       eventDateArr = eventDateMiddleSplit[0].split('-')
+    return int(eventDateArr[1])
 
 def getDay(eventDate):
-    eventDategArr = eventDate.split('.')
-    if len(eventDategArr) < 2:
+    eventDateArr = eventDate.split('.')
+    if len(eventDateArr) < 2:
        eventDateMiddleSplit = eventDate.split(' ')
-       eventDategArr = eventDateMiddleSplit[0].split('-')
-    return int(eventStringArr[0])
+       eventDateArr = eventDateMiddleSplit[0].split('-')
+    return int(eventDateArr[0])
 
 
 
@@ -317,9 +334,9 @@ def getEventsFromExcel(sheet):
     # Ignore first row with column titles
     for rowIndex in range(2, sheet.max_row+1):
 
-        date = sheet.cell(row=rowIndex,column=1).value
-        if not checkDateStringValidity(str(date)):
-            if str(date)=="":
+        event_date = sheet.cell(row=rowIndex,column=1).value
+        if not checkDateStringValidity(str(event_date)):
+            if str(event_date)=="":
                 if rowIsEmpty(sheet, rowIndex, EXCEL_COULUMN_NUMBER):
                     continue;
                 else:
@@ -343,17 +360,17 @@ def getEventsFromExcel(sheet):
         if price is None:
             price = ""
 
-        communityString = sheet.cell(row = rowIndex, column = 8).value
-        community = getCommunityFromString(communityString) #TODO: write this one
+        communityString = sheet.cell(row = rowIndex, column = 10).value
+        community = getCommunityFromString(communityString)
 
-        link = sheet.cell(row = rowIndex, column = 9).value
+        link = sheet.cell(row = rowIndex, column = 11).value
         #TODO: check link validity
 
-        eventTypeString = sheet.cell(row = rowIndex, column = 10).value
-        eventType = getEventTypeFromString(eventTypeString) #TODO: write this one too
+        eventTypeString = sheet.cell(row = rowIndex, column = 12).value
+        eventType = getEventTypeFromString(eventTypeString)
 
 
-        excelEvent = ExcelEvent(str(date), str(hourValue), title, location, price, community, link, eventType)
+        excelEvent = ExcelEvent(str(event_date), str(hourValue), title, location, price, community, link, eventType)
 
         if excelEvent.month not in excelMonths:
             excelMonths.append(excelEvent.month)
@@ -375,12 +392,13 @@ def getEventsFromExcel(sheet):
     if not (12 in excelMonths and 1 in excelMonths):
         excelMonths.sort()
     else:
-        metaData.increaseYear = True
+        MetaData.increaseYear = True
 
-    metaData.firstMonthInteger = excelMonths[0]
-    metaData.secondMonthInteger = excelMonths[1]
+    MetaData.firstMonthInteger = excelMonths[0]
+    MetaData.secondMonthInteger = excelMonths[1]
 
-    excelEventsDictionary = { metaData.firstMonthInteger : firstMonthExcelEventsDictionary, metaData.secondMonthInteger : secondMonthExcelEventsDictionary }
+    excelEventsDictionary = { MetaData.firstMonthInteger : firstMonthExcelEventsDictionary, MetaData.secondMonthInteger : secondMonthExcelEventsDictionary }
+    peakExcelEventsDictionary = { MetaData.firstMonthInteger : firstMonthPeakExcelEventsDictionary, MetaData.secondMonthInteger : secondMonthPeakExcelEventsDictionary }
 
 
 
@@ -395,19 +413,19 @@ def rowIsEmpty(sheet, rowIndex, maxColIndex):
 
 
 def getCommunityFromString(communityString):
-    communities = Communities()
-    if communities.SinglesString in communityString:
-        return communities.Singles
-    elif communities.TiulaString in communityString:
-        return communities.Tiula
-    elif communities.YoloString in communityString:
-        return communities.Yolo
-    elif communities.WomenString in communityString:
-        return communities.Women
-    elif communities.GoldersString in communityString:
-        return communities.Golders
-    elif communities.KulturaString in communityString:
-        return communities.Kultura
+    excelCommunitiesStrings = ExcelCommunitiesStrings()
+    if excelCommunitiesStrings.Singles in communityString:
+        return Community.SINGLES
+    elif excelCommunitiesStrings.Tiula in communityString:
+        return Community.TIULA
+    elif excelCommunitiesStrings.Yolo in communityString:
+        return Community.YOLO
+    elif excelCommunitiesStrings.Women in communityString:
+        return Community.WOMEN
+    elif excelCommunitiesStrings.Golders in communityString:
+        return Community.GOLDERS
+    elif excelCommunitiesStrings.Kultura in communityString:
+        return Community.KULTURA
     else:
         return None
 
@@ -435,222 +453,280 @@ def getEventTypeFromString(eventTypeString):
 #     Exceptions:
 #         * Not all cells of Excel are filled
 
-def get_slide_shapes(slide):
-    singles, doubles, header_shape = find_groups(slide.shapes)
+def get_slide_shapes(slide, isFirstSlide = False):
+    singles, doubles, header_shape = find_groups(slide.shapes, isFirstSlide)[:3]
+    first_slide_groups, first_slide_month1_shape, first_slide_month2_shape = find_groups(slide.shapes, isFirstSlide)[3:]
     header_shape_dict = {}
+    first_slide_shapes_dict = {}
 
-    singles = reversed(singles) #Maybe unnecessary
+    singles = reversed(singles) #TODO: Check if unnecessary
     doubles = reversed(doubles)
 
-    single_titles = []
-    single_locations = []
-    single_prices = [] 
-    single_Singles_tags = []
-    single_Tiula_tags = []
-    single_Yolo_tags = []
-    single_Women_tags = []
-    single_Golders_tags = []
-    single_Kultura_tags = []
-    single_counts = []
-    single_count_offs = []
-    single_days = []
-    single_day_offs = []
-    single_spine_bgs = []
-    single_spine_bg_offs = []
-    single_bg_highlights = []
-    single_bg_pics = []
-    single_bg_offs = []
-    single_bgs = []
-    single_shapes = []
+    if not isFirstSlide:
 
-    double_titles1 = []
-    double_locations1 = []
-    double_prices1 = [] 
-    double_Singles_tags1 = []
-    double_Tiula_tags1 = []
-    double_Yolo_tags1 = []
-    double_Women_tags1 = []
-    double_Golders_tags1 = []
-    double_Kultura_tags1 = []
-    double_titles2 = []
-    double_locations2 = []
-    double_prices2 = [] 
-    double_Singles_tags2 = []
-    double_Tiula_tags2 = []
-    double_Yolo_tags2 = []
-    double_Women_tags2 = []
-    double_Golders_tags2 = []
-    double_Kultura_tags2 = []
-    double_counts = []
-    double_count_offs = []
-    double_days = []
-    double_day_offs = []
-    double_spine_bgs = []
-    double_spine_bg_offs = []
-    double_bg_highlights = []
-    double_bg_pics = []
-    double_bg_offs = []
-    double_bgs = []
-    double_shapes = []
+        single_titles = []
+        single_locations = []
+        single_prices = [] 
+        single_Singles_tags = []
+        single_Tiula_tags = []
+        single_Yolo_tags = []
+        single_Women_tags = []
+        single_Golders_tags = []
+        single_Kultura_tags = []
+        single_counts = []
+        single_count_offs = []
+        single_days = []
+        single_day_offs = []
+        single_spine_bgs = []
+        single_spine_bg_offs = []
+        single_bg_highlights = []
+        single_bg_pics = []
+        single_bg_offs = []
+        single_bgs = []
+        single_shapes = []
 
-
-    for g in singles:
-        single_shapes.append(g)
-        for shape in iter_textable_shapes(g.shapes):
-            if shape.name == 'TITLE':
-                single_titles.append(shape)
-            elif shape.name == 'LOCATION':
-                single_locations.append(shape)
-            elif shape.name == 'PRICE':
-                single_prices.append(shape)
-            elif shape.name == 'TAG SINGLES 1':
-                single_Singles_tags.append(shape)
-            elif shape.name == 'TAG TIULA 1':
-                single_Tiula_tags.append(shape)
-            elif shape.name == 'TAG YOLO 1':
-                single_Yolo_tags.append(shape)
-            elif shape.name == 'TAG WOMEN 1':
-                single_Women_tags.append(shape)
-            elif shape.name == 'TAG GOLDERS 1':
-                single_Golders_tags.append(shape)
-            elif shape.name == 'TAG KULTURA 1':
-                single_Kultura_tags.append(shape)
-            elif shape.name == 'COUNT':
-                single_counts.append(shape)
-            elif shape.name == 'COUNT OFF':
-                single_count_offs.append(shape)
-            elif shape.name == 'DAY':
-                single_days.append(shape)
-            elif shape.name == 'DAY OFF':
-                single_day_offs.append(shape)
-            elif shape.name == 'SPINE BG':
-                single_sping_bgs.append(shape)
-            elif shape.name == 'SPINE BG OFF':
-                single_spine_bg_offs.append(shape)
-            elif shape.name == 'BG HIGHLIGHT':
-                single_bg_highlights.append(shape)
-            elif shape.name == 'BG PIC':
-                single_bg_pics.append(shape)
-            elif shape.name == 'BG OFF':
-                single_bg_offs.append(shape)
-            elif shape.name == 'BG':
-                single_bgs.append(shape)
-
-    for g in doubles:
-        double_shapes.append(g)
-        for shape in iter_textable_shapes(g.shapes):
-            if shape.name == 'TITLE 1':
-                double_titles1.append(shape)
-            elif shape.name == 'LOCATION 1':
-                double_locations1.append(shape)
-            elif shape.name == 'PRICE 1':
-                double_prices1.append(shape)
-            elif shape.name == 'TAG SINGLES 1':
-                double_Singles_tags1.append(shape)
-            elif shape.name == 'TAG TIULA 1':
-                double_Tiula_tags1.append(shape)
-            elif shape.name == 'TAG YOLO 1':
-                double_Yolo_tags1.append(shape)
-            elif shape.name == 'TAG WOMEN 1':
-                double_Women_tags1.append(shape)
-            elif shape.name == 'TAG GOLDERS 1':
-                double_Golders_tags1.append(shape)
-            elif shape.name == 'TAG KULTURA 1':
-                double_Kultura_tags1.append(shape)
-            elif shape.name == 'TITLE 2':
-                double_titles2.append(shape)
-            elif shape.name == 'LOCATION 2':
-                double_locations2.append(shape)
-            elif shape.name == 'PRICE 2':
-                double_prices2.append(shape)
-            elif shape.name == 'TAG SINGLES 2':
-                double_Singles_tags2.append(shape)
-            elif shape.name == 'TAG TIULA 2':
-                double_Tiula_tags2.append(shape)
-            elif shape.name == 'TAG YOLO 2':
-                double_Yolo_tags2.append(shape)
-            elif shape.name == 'TAG WOMEN 2':
-                double_Women_tags2.append(shape)
-            elif shape.name == 'TAG GOLDERS 2':
-                double_Golders_tags2.append(shape)
-            elif shape.name == 'TAG KULTURA 2':
-                double_Kultura_tags2.append(shape)
-            elif shape.name == 'COUNT':
-                double_counts.append(shape)
-            elif shape.name == 'COUNT OFF':
-                double_count_offs.append(shape)
-            elif shape.name == 'DAY':
-                double_days.append(shape)
-            elif shape.name == 'DAY OFF':
-                double_day_offs.append(shape)
-            elif shape.name == 'SPINE BG':
-                double_sping_bgs.append(shape)
-            elif shape.name == 'SPINE BG OFF':
-                double_spine_bg_offs.append(shape)
-            elif shape.name == 'BG HIGHLIGHT':
-                double_bg_highlights.append(shape)
-            elif shape.name == 'BG PIC':
-                double_bg_pics.append(shape)
-            elif shape.name == 'BG OFF':
-                double_bg_offs.append(shape)
-            elif shape.name == 'BG':
-                double_bgs.append(shape)
-
-    for shape in iter_textable_shapes(header_shape):
-        if shape.name == 'ZONE':
-            header_shape_dict["zoneShape"] = shape
-        elif shape.name == 'MONTH':
-            header_shape_dict["monthShape"] = shape
-        elif shape.name == 'YEAR':
-            header_shape_dict["yearShape"] = shape
+        double_titles1 = []
+        double_locations1 = []
+        double_prices1 = [] 
+        double_Singles_tags1 = []
+        double_Tiula_tags1 = []
+        double_Yolo_tags1 = []
+        double_Women_tags1 = []
+        double_Golders_tags1 = []
+        double_Kultura_tags1 = []
+        double_titles2 = []
+        double_locations2 = []
+        double_prices2 = [] 
+        double_Singles_tags2 = []
+        double_Tiula_tags2 = []
+        double_Yolo_tags2 = []
+        double_Women_tags2 = []
+        double_Golders_tags2 = []
+        double_Kultura_tags2 = []
+        double_counts = []
+        double_count_offs = []
+        double_days = []
+        double_day_offs = []
+        double_spine_bgs = []
+        double_spine_bg_offs = []
+        double_bg_highlights = []
+        double_bg_pics = []
+        double_bg_offs = []
+        double_bgs = []
+        double_shapes = []
 
 
-    # textable_shapes = list(iter_textframed_shapes(slide.shapes))
-    # ordered_textable_shapes = sorted(
-    #     textable_shapes, key=lambda shape: (shape.top, shape.left)
-    # )
+        for g in singles:
+            single_shapes.append(g)
+            for shape in iter_textable_shapes(g.shapes):
+                if shape.name == 'TITLE':
+                    single_titles.append(shape)
+                elif shape.name == 'LOCATION':
+                    single_locations.append(shape)
+                elif shape.name == 'PRICE':
+                    single_prices.append(shape)
+                elif shape.name == 'TAG SINGLES 1':
+                    single_Singles_tags.append(shape)
+                elif shape.name == 'TAG TIULA 1':
+                    single_Tiula_tags.append(shape)
+                elif shape.name == 'TAG YOLO 1':
+                    single_Yolo_tags.append(shape)
+                elif shape.name == 'TAG WOMEN 1':
+                    single_Women_tags.append(shape)
+                elif shape.name == 'TAG GOLDERS 1':
+                    single_Golders_tags.append(shape)
+                elif shape.name == 'TAG KULTURA 1':
+                    single_Kultura_tags.append(shape)
+                elif shape.name == 'COUNT':
+                    single_counts.append(shape)
+                elif shape.name == 'COUNT OFF':
+                    single_count_offs.append(shape)
+                elif shape.name == 'DAY':
+                    single_days.append(shape)
+                elif shape.name == 'DAY OFF':
+                    single_day_offs.append(shape)
+                elif shape.name == 'SPINE BG':
+                    single_sping_bgs.append(shape)
+                elif shape.name == 'SPINE BG OFF':
+                    single_spine_bg_offs.append(shape)
+                elif shape.name == 'BG HIGHLIGHT':
+                    single_bg_highlights.append(shape)
+                elif shape.name == 'BG PIC':
+                    single_bg_pics.append(shape)
+                elif shape.name == 'BG OFF':
+                    single_bg_offs.append(shape)
+                elif shape.name == 'BG':
+                    single_bgs.append(shape)
 
-    # for shape in ordered_textable_shapes:
-    #     if shape.name.startswith('MONTH1'):
-    #         createMonthObjects(shape, months, 0)
-    #     if shape.name.startswith('MONTH2'):
-    #         createMonthObjects(shape, months, 1)
-    #     if shape.name == "AREA":
-    #         createAreaObjects(shape, area)
-    #     if shape.name == "CONTACT":
-    #         createContactObject(shape, contact)
 
-    # days = createRightOrder(days)
-    #dates = createRightOrder(dates)
-    # hours = createRightOrder(hours)
-    # titles = createRightOrder(titles)
-    # texts1 = createRightOrder(texts1)
-    # locs = createRightOrder(locs)
-    # prices = createRightOrder(prices)
-    # free = createRightOrder(free)
-    # zoom = createRightOrder(zoom)
-    #shapes = sorted(shapes, key=lambda x: get_int_from_shape_name(x.name))
+        for g in doubles:
+            double_shapes.append(g)
+            for shape in iter_textable_shapes(g.shapes):
+                if shape.name == 'TITLE 1':
+                    double_titles1.append(shape)
+                elif shape.name == 'LOCATION 1':
+                    double_locations1.append(shape)
+                elif shape.name == 'PRICE 1':
+                    double_prices1.append(shape)
+                elif shape.name == 'TAG SINGLES 1':
+                    double_Singles_tags1.append(shape)
+                elif shape.name == 'TAG TIULA 1':
+                    double_Tiula_tags1.append(shape)
+                elif shape.name == 'TAG YOLO 1':
+                    double_Yolo_tags1.append(shape)
+                elif shape.name == 'TAG WOMEN 1':
+                    double_Women_tags1.append(shape)
+                elif shape.name == 'TAG GOLDERS 1':
+                    double_Golders_tags1.append(shape)
+                elif shape.name == 'TAG KULTURA 1':
+                    double_Kultura_tags1.append(shape)
+                elif shape.name == 'TITLE 2':
+                    double_titles2.append(shape)
+                elif shape.name == 'LOCATION 2':
+                    double_locations2.append(shape)
+                elif shape.name == 'PRICE 2':
+                    double_prices2.append(shape)
+                elif shape.name == 'TAG SINGLES 2':
+                    double_Singles_tags2.append(shape)
+                elif shape.name == 'TAG TIULA 2':
+                    double_Tiula_tags2.append(shape)
+                elif shape.name == 'TAG YOLO 2':
+                    double_Yolo_tags2.append(shape)
+                elif shape.name == 'TAG WOMEN 2':
+                    double_Women_tags2.append(shape)
+                elif shape.name == 'TAG GOLDERS 2':
+                    double_Golders_tags2.append(shape)
+                elif shape.name == 'TAG KULTURA 2':
+                    double_Kultura_tags2.append(shape)
+                elif shape.name == 'COUNT':
+                    double_counts.append(shape)
+                elif shape.name == 'COUNT OFF':
+                    double_count_offs.append(shape)
+                elif shape.name == 'DAY':
+                    double_days.append(shape)
+                elif shape.name == 'DAY OFF':
+                    double_day_offs.append(shape)
+                elif shape.name == 'SPINE BG':
+                    double_sping_bgs.append(shape)
+                elif shape.name == 'SPINE BG OFF':
+                    double_spine_bg_offs.append(shape)
+                elif shape.name == 'BG HIGHLIGHT':
+                    double_bg_highlights.append(shape)
+                elif shape.name == 'BG PIC':
+                    double_bg_pics.append(shape)
+                elif shape.name == 'BG OFF':
+                    double_bg_offs.append(shape)
+                elif shape.name == 'BG':
+                    double_bgs.append(shape)
 
+        single_event_shapes = []
+        double_event_shapes = []
 
-    single_event_shapes = []
-    double_event_shapes = []
+        for i in range(36):
+            single_event_shape = SingleEventShape(single_titles[i], single_locations[i], single_prices[i], single_Singles_tags[i], single_Tiula_tags[i], single_Yolo_tags[i], single_Women_tags[i],
+                single_Golders_tags[i], single_Kultura_tags[i], single_counts[i], single_count_offs[i], single_days[i], single_day_offs[i], single_spine_bgs[i], single_spine_bg_offs[i],
+                single_bg_highlights[i], single_bg_pics[i], single_bg_offs[i], single_bgs[i], single_shapes[i])
+            single_event_shapes.append(single_event_shape)
 
-    # def __init__(self, titleShape, locationShape, priceShape, tagSingles, tagTiula, tagYolo, tagWomen, tagGolders, tagKultura, countShape, countOffShape, dayShape, dayOffShape,
-    # spineBgShape, spineBgOffShape, bgHighlightShape, bgPicShape, bgOffShape, bgShape, shape, isTreated = False):
+            double_event_shape = DoubleEventShape(double_titles1[i], double_locations1[i], double_prices1[i], double_Singles_tags1[i], double_Tiula_tags1[i], double_Yolo_tags1[i], double_Women_tags1[i],
+                double_Golders_tags1[i], double_Kultura_tags1[i], double_titles2[i], double_locations2[i], double_prices2[i], double_Singles_tags2[i], double_Tiula_tags2[i], double_Yolo_tags2[i],
+                double_Women_tags2[i], double_Golders_tags2[i], double_Kultura_tags2[i], double_counts[i], double_count_offs[i], double_days[i], double_day_offs[i], double_spine_bgs[i],
+                double_spine_bg_offs[i],double_bg_highlights[i], double_bg_pics[i], double_bg_offs[i], double_bgs[i], double_shapes[i])
+            double_event_shapes.append(double_event_shape)
 
-    for i in range(36):
-        single_event_shape = SingleEventShape(single_titles[i], single_locations[i], single_prices[i], single_Singles_tags[i], single_Tiula_tags[i], single_Yolo_tags[i], single_Women_tags[i],
-            single_Golders_tags[i], single_Kultura_tags[i], single_counts[i], single_count_offs[i], single_days[i], single_day_offs[i], single_spine_bgs[i], single_spine_bg_offs[i],
-            single_bg_highlights[i], single_bg_pics[i], single_bg_offs[i], single_bgs[i], single_shapes[i])
-        single_event_shapes.append(single_event_shape)
+        return single_event_shapes, double_event_shapes, header_shape_dict
+    
+    else:
 
-        double_event_shape = DoubleEventShape(double_titles1[i], double_locations1[i], double_prices1[i], double_Singles_tags1[i], double_Tiula_tags1[i], double_Yolo_tags1[i], double_Women_tags1[i],
-            double_Golders_tags1[i], double_Kultura_tags1[i], double_titles2[i], double_locations2[i], double_prices2[i], double_Singles_tags2[i], double_Tiula_tags2[i], double_Yolo_tags2[i],
-            double_Women_tags2[i], double_Golders_tags2[i], double_Kultura_tags2[i], double_counts[i], double_count_offs[i], double_days[i], double_day_offs[i], double_spine_bgs[i],
-            double_spine_bg_offs[i],double_bg_highlights[i], double_bg_pics[i], double_bg_offs[i], double_bgs[i], double_shapes[i])
-        double_event_shapes.append(double_event_shape)
+        for g in first_slide_groups:
+            if g.name == "SINGLES 1":
+                for shape in iter_textable_shapes(g.shapes):
+                    if shape.name == "Textbox1":
+                        first_slide_shapes_dict["Singles1TitleShape"] = shape
+                    elif shape.name == "Textbox2":
+                        first_slide_shapes_dict["Singles1TextShape"] = shape
+            elif g.name == "SINGLES 2":
+                for shape in iter_textable_shapes(g.shapes):
+                    if shape.name == "Textbox1":
+                        first_slide_shapes_dict["Singles2TitleShape"] = shape
+                    elif shape.name == "Textbox2":
+                        first_slide_shapes_dict["Singles2TextShape"] = shape
+            elif g.name == "YOLO 1":
+                for shape in iter_textable_shapes(g.shapes):
+                    if shape.name == "Textbox1":
+                        first_slide_shapes_dict["YOLO1TitleShape"] = shape
+                    elif shape.name == "Textbox2":
+                        first_slide_shapes_dict["YOLO1TextShape"] = shape
+            elif g.name == "YOLO 2":
+                for shape in iter_textable_shapes(g.shapes):
+                    if shape.name == "Textbox1":
+                        first_slide_shapes_dict["YOLO2TitleShape"] = shape
+                    elif shape.name == "Textbox2":
+                        first_slide_shapes_dict["YOLO2TextShape"] = shape
+            elif g.name == "KULTURA 1":
+                for shape in iter_textable_shapes(g.shapes):
+                    if shape.name == "Textbox1":
+                        first_slide_shapes_dict["Kultura1TitleShape"] = shape
+                    elif shape.name == "Textbox2":
+                        first_slide_shapes_dict["Kultura1TextShape"] = shape
+            elif g.name == "KULTURA 2":
+                for shape in iter_textable_shapes(g.shapes):
+                    if shape.name == "Textbox1":
+                        first_slide_shapes_dict["Kultura2TitleShape"] = shape
+                    elif shape.name == "Textbox2":
+                        first_slide_shapes_dict["Kultura2TextShape"] = shape
+            elif g.name == "TIULA 1":
+                for shape in iter_textable_shapes(g.shapes):
+                    if shape.name == "Textbox1":
+                        first_slide_shapes_dict["Tiula1TitleShape"] = shape
+                    elif shape.name == "Textbox2":
+                        first_slide_shapes_dict["Tiula1TextShape"] = shape
+            elif g.name == "TIULA 2":
+                for shape in iter_textable_shapes(g.shapes):
+                    if shape.name == "Textbox1":
+                        first_slide_shapes_dict["Tiula2TitleShape"] = shape
+                    elif shape.name == "Textbox2":
+                        first_slide_shapes_dict["Tiula2TextShape"] = shape
+            elif g.name == "GOLDERS 1":
+                for shape in iter_textable_shapes(g.shapes):
+                    if shape.name == "Textbox1":
+                        first_slide_shapes_dict["Golders1TitleShape"] = shape
+                    elif shape.name == "Textbox2":
+                        first_slide_shapes_dict["Golders1TextShape"] = shape
+            elif g.name == "GOLDERS 2":
+                for shape in iter_textable_shapes(g.shapes):
+                    if shape.name == "Textbox1":
+                        first_slide_shapes_dict["Golders2TitleShape"] = shape
+                    elif shape.name == "Textbox2":
+                        first_slide_shapes_dict["Golders2TextShape"] = shape
+            elif g.name == "WOMEN 1":
+                for shape in iter_textable_shapes(g.shapes):
+                    if shape.name == "Textbox1":
+                        first_slide_shapes_dict["Women1TitleShape"] = shape
+                    elif shape.name == "Textbox2":
+                        first_slide_shapes_dict["Women1TextShape"] = shape
+            elif g.name == "WOMEN 2":
+                for shape in iter_textable_shapes(g.shapes):
+                    if shape.name == "Textbox1":
+                        first_slide_shapes_dict["Women2TitleShape"] = shape
+                    elif shape.name == "Textbox2":
+                        first_slide_shapes_dict["Women2TextShape"] = shape
+            elif g.name == "FOOTER":
+                for shape in iter_textable_shapes(g.shapes):
+                    if shape.name == "NAME AND TEL":
+                        first_slide_shapes_dict["contact"] = shape
+            else:
+                for shape in iter_textable_shapes(g.shapes):
+                    if shape.name == "MONTHES":
+                        first_slide_shapes_dict["monthes"] = shape
+                    elif shape.name == "YEAR":
+                        first_slide_shapes_dict["year"] = shape
 
-    return single_event_shapes, double_event_shapes, header_shape_dict
+        first_slide_shapes_dict["month1"] = first_slide_month1_shape
+        first_slide_shapes_dict["month2"] = first_slide_month2_shape
+
+        return first_slide_shapes_dict
+        
 
 
 # get_int_from_shape_name(shape_name)
@@ -662,20 +738,53 @@ def get_slide_shapes(slide):
 #     Exceptions:
 #         * Wrong element name format
 
-def find_groups(shapes):
+def find_groups(shapes, isFirstSlide = True):
+
     doubles = []
     singles = []
     header = None
+    first_slide_groups = []
+    first_slide_month1_shape = None 
+    first_slide_month2_shape = None
 
-    for shape in shapes:
-        if shape.shape_type == MSO_SHAPE_TYPE.GROUP:
-            if shape.name.startswith("DOUBLE"):
-                doubles.append(shape)
-            elif shape.name.startswith("ELEMENT"):
-                singles.append(shape)
-            elif shape.name.startswith("HEADER"):
-                header = shape
-    return singles, doubles, header
+    if isFirstSlide:
+
+        for shape in shapes:
+            if shape.shape_type == MSO_SHAPE_TYPE.GROUP:
+                if shape.name.startswith("DOUBLE"):
+                    doubles.append(shape)
+                elif shape.name.startswith("SINGLE"):
+                    singles.append(shape)
+                elif shape.name.startswith("HEADER"):
+                    header = shape
+
+    else:
+
+        for shape in shapes:
+            if shape.shape_type == MSO_SHAPE_TYPE.GROUP:
+                if shape.name.startswith("HEADER"):
+                    first_slide_groups.append(shape)
+                elif shape.name.startswith("SINGLES"):
+                    first_slide_groups.append(shape)
+                elif shape.name.startswith("YOLO"):
+                    first_slide_groups.append(shape)
+                elif shape.name.startswith("KULTURA"):
+                    first_slide_groups.append(shape)  
+                elif shape.name.startswith("TIULA"):
+                    first_slide_groups.append(shape)
+                elif shape.name.startswith("GOLDERS"):
+                    first_slide_groups.append(shape)
+                elif shape.name.startswith("WOMEN"):
+                    first_slide_groups.append(shape)
+                elif shape.name.startswith("FOOTER"):
+                    first_slide_groups.append(shape)
+            else:
+                if shape.name == "TITLE MONTH1":
+                    first_slide_month1_shape = shape
+                elif shape.name == "TITLE MONTH2":
+                    first_slide_month2_shape = shape
+
+    return singles, doubles, header, first_slide_groups, first_slide_month1_shape, first_slide_month2_shape
 
 
 def get_int_from_shape_name(shape_name):
@@ -1006,43 +1115,48 @@ def createPptxPlans(month1, month2, area, contact, year, language):
         cache_file.write(json.dumps(userInput))
         cache_file.close
 
-        metaData.firstMonthName = month1
-        metaData.secondMonthName = month2
-        metaData.year = year
-        metaData.zone = area
-        metaData.language = language
+        MetaData.firstMonthName = month1
+        MetaData.secondMonthName = month2
+        MetaData.year = year
+        MetaData.zone = area
+        MetaData.language = language
 
 
         readExcel(excelFilePath)
+        print("readExcel is done")
 
-        #createPptxPlan(pptxFilePath)
         try:
+
             presentation = Presentation(pptxFilePath)
 
             first_slide = presentation.slides[0]
-            second_slide = presentation.slides[1] #TODO: wrap in try catch and throw excecption?
+            second_slide = presentation.slides[1]
 
-            processFirstSlide(first_slide, isFirstPresentation)
-            processSecondSlide(second_slide, isFirstPresentation)
+            processFirstSlide(first_slide)
+            print("first slide is done")
+            processSecondSlide(second_slide, True)
+            print("second slide is done")
+
+            files = [('Powerpoint files', '*.pptx')]
+            saved_file = asksaveasfile(filetypes = files, defaultextension = files) #TODO: add default file name
+            try:
+                presentation.save(saved_file.name)
+            except PermissionError: 
+                easygui.msgbox("הקובץ \n"+ saved_file.name+"\n פתוח. יש לסגור אותו בעת הרצת התוכנית")
+
+            presentation = Presentation(saved_file.name)
+            second_slide = presentation.slides[1]
+            processSecondSlide(second_slide, False)
+
+            saved_file2 = asksaveasfile(filetypes = files, defaultextension = files)
+            try:
+                presentation.save(saved_file2.name)
+                easygui.msgbox("הקבצים נוצרו בהצלחה!")
+            except PermissionError: 
+                easygui.msgbox("הקובץ \n"+ saved_file2.name+"\n פתוח. יש לסגור אותו בעת הרצת התוכנית")
 
         except IndexError:
             raise Exception("תבנית ה-powerpoint מכילה פחות מ-2 שקפים")
-        
-
-        
-
-        single_event_shapes, double_event_shapes, friday_event_shapes = get_text_boxes(slide, months_names, area, contact)
-
-        
-
-
-        files = [('Powerpoint files', '*.pptx')]
-        file = asksaveasfile(filetypes = files, defaultextension = files)
-        try:
-            presentation.save(file.name)
-            easygui.msgbox("הקובץ נוצר בהצלחה")
-        except PermissionError: 
-            easygui.msgbox("הקובץ \n"+ file.name+"\n פתוח. יש לסגור אותו בעת הרצת התוכנית")
 
     except Exception as e:
         easygui.msgbox("שגיאה :"+ str(e))
@@ -1050,28 +1164,60 @@ def createPptxPlans(month1, month2, area, contact, year, language):
     
 
 
-def processFirstSlide(slide, isFirstPresentation):
-    pass
+def processFirstSlide(slide):
+    first_slide_shapes_dict = get_slide_shapes(slide, isFirstSlide = True)
+    print("got first slide shapes")
+    month1 = MetaData.firstMonthName
+    month2 = MetaData.secondMonthName
+    year = MetaData.year
+    year_string = year[2:]
+    print("Hi!")
+    increaseYear = MetaData.increaseYear
+    increased_year_string = str(int(year_string) + 1) if increaseYear else year_string
+    contact = MetaData.contact
+
+    excelCommunitiesStrings = ExcelCommunitiesStrings()
+    dictionaries = [firstMonthPeakExcelEventsDictionary, secondMonthPeakExcelEventsDictionary]
+
+    for commString, index in enumerate(excelCommunitiesStrings.communitiesStringsArray):
+        community = Community[commString.upper()]
+        for i in range(1,3):
+            dictionary = dictionaries[i-1]
+            titleKey = commString + str(i) + "TitleShape"
+            textKey = commString + str(i) + "TextShape"
+            title = excelCommunitiesStrings.excelCommunitiesStringsArray[index] + " - " + dictionary[community].title
+            text = dictionary[community].location + " | " + dictionary[community].date
+            + "."+ year_string + " | " + dictionary[community].hour
+            writeTextToTextbox(first_slide_shapes_dict[titleKey].text_frame, title)
+            writeTextToTextbox(first_slide_shapes_dict[textKey].text_frame, text)
+
+
+    writeTextToTextbox(first_slide_shapes_dict["year"].text_frame, year)
+    writeTextToTextbox(first_slide_shapes_dict["month1"].text_frame, month1)
+    writeTextToTextbox(first_slide_shapes_dict["month2"].text_frame, month2)
+    writeTextToTextbox(first_slide_shapes_dict["monthes"].text_frame, month1 + "-" + month2)
+    writeTextToTextbox(first_slide_shapes_dict["contact"].text_frame, contact)
+
 
 
 def processSecondSlide(slide, isFirstPresentation):
-    single_event_shapes, double_event_shapes, header_shape = get_slide_shapes(slide)
+    single_event_shapes, double_event_shapes, header_shape = get_slide_shapes(slide, isFirstSlide = False)
 
     calendar.setfirstweekday(6)
 
     month = None 
     if isFirstPresentation:
-        month = metaData.firstMonthInteger
+        month = MetaData.firstMonthInteger
     else:
-        month = metaData.secondMonthInteger
-    
-    if isFirstPresentation:
+        month = MetaData.secondMonthInteger
 
-        calendar.setfirstweekday(6)
+    increaseYear = MetaData.increaseYear if not isFirstPresentation else False
 
-        createCalendarDates(single_event_shapes, double_event_shapes, month)
+    calendar.setfirstweekday(6)
 
-        writeTextToTextboxes(slide, single_event_shapes, double_event_shapes, header_shape, month)
+    createCalendarDates(single_event_shapes, double_event_shapes, month, increaseYear)
+
+    writeTextToTextboxes(slide, single_event_shapes, double_event_shapes, header_shape, month)
 
 
 
@@ -1096,7 +1242,7 @@ def get_number_of_shape(year, month, day):
 
 
 def createCalendarDates(slide, singleEventShapes, doubleEventShapes, month, increaseYear = False):
-    year = int(metaData.year)
+    year = int(MetaData.year)
     if increaseYear:
         year += 1
 
@@ -1223,7 +1369,7 @@ def hebrew_letter_of_day(weekday_int):
 
 
 def writeTextToTextboxes(slide, singleEventShapes, doubleEventShapes, headerShape, month, increaseYear = False):
-    year = int(metaData.year)
+    year = int(MetaData.year)
     if increaseYear:
         year += 1
 
@@ -1253,234 +1399,10 @@ def writeTextToTextboxes(slide, singleEventShapes, doubleEventShapes, headerShap
                 case ShapeType.PIC:
                     treatPicShape(slide, single_event_shape, double_event_shape)
 
-    writeTextToTextbox(header_shape[zone].text_frame, metaData.area)
-    writeTextToTextbox(header_shape[month].text_frame, metaData.month)
-    writeTextToTextbox(header_shape[year].text_frame, metaData.year)
+    writeTextToTextbox(header_shape[zone].text_frame, MetaData.area)
+    writeTextToTextbox(header_shape[month].text_frame, MetaData.month)
+    writeTextToTextbox(header_shape[year].text_frame, MetaData.year)
 
-
-
-
-        if isDouble == False and isFriday == False: # It's a standart single event
-            event_shape = single_event_shape
-            #deleteDoubleShape
-            slide.shapes.element.remove(double_event_shape.shape.element)
-
-            title_text_frame = event_shape.titleShape.text_frame
-            p_title = title_text_frame.paragraphs[0]
-            p_title.runs[0].text = ""
-            p_title.alignment = PP_ALIGN.RIGHT
-            clearTextboxText(p_title, title_text_frame)
-            run_title = p_title.runs[0]
-            run_title.text = event.hour + ": " + event.title
-
-            text1_text_frame = event_shape.text1Shape.text_frame
-            p_text1 = text1_text_frame.paragraphs[0]
-            p_text1.runs[0].text = ""
-            p_text1.alignment = PP_ALIGN.RIGHT
-            clearTextboxText(p_text1, text1_text_frame)
-            run_text1 = p_text1.runs[0]
-            run_text1.text = event.text1
-
-            loc_text_frame = event_shape.locShape.text_frame
-            p_loc = loc_text_frame.paragraphs[0]
-            p_loc.alignment = PP_ALIGN.RIGHT
-            clearTextboxText(p_loc, loc_text_frame)
-            run_loc = p_loc.runs[0]
-            run_loc.text = event.location
-
-            price_text_frame = event_shape.priceShape.text_frame
-            p_price = price_text_frame.paragraphs[0]
-            p_price.runs[0].text = ""
-            p_price.alignment = PP_ALIGN.RIGHT
-            clearTextboxText(p_price, price_text_frame)
-            run_price = p_price.runs[0]
-            if language == "1": 
-                if event.price != "" and event.price != FORBIDDEN_SENTENCE_HEBREW:
-                    run_price.text = event.price
-            else:
-                if event.price != "" and event.price != FORBIDDEN_SENTENCE_ARABIC:
-                    run_price.text = event.price
-
-            if event.isFree == False:
-                freeElement = event_shape.freeShape
-                event_shape.shape.shapes.element.remove(freeElement.element)
-
-            if event.isZoom == False:
-                zoomElement = event_shape.zoomShape
-                event_shape.shape.shapes.element.remove(zoomElement.element)
-
-        elif isDouble == False and isFriday == True and fridayEventsShape: # It's a Friday event
-            event_shape = friday_event_shape
-
-            date_text_frame = event_shape.dateShape.text_frame
-            p_date = date_text_frame.paragraphs[0]
-            p_date.runs[0].text = ""
-            p_date.alignment = PP_ALIGN.RIGHT
-            clearTextboxText(p_date, date_text_frame)
-            run_date = p_date.runs[0]
-            run_date.text = event.date #TODO: add the word Friday (in hebrew or arabic, according to the language parameter)
-
-            title_text_frame = event_shape.titleShape.text_frame
-            p_title = title_text_frame.paragraphs[0]
-            p_title.runs[0].text = ""
-            p_title.alignment = PP_ALIGN.RIGHT
-            clearTextboxText(p_title, title_text_frame)
-            run_title = p_title.runs[0]
-            run_title.text = event.hour + ": " + event.title
-
-            loc_text_frame = event_shape.locShape.text_frame
-            p_loc = loc_text_frame.paragraphs[0]
-            p_loc.alignment = PP_ALIGN.RIGHT
-            clearTextboxText(p_loc, loc_text_frame)
-            run_loc = p_loc.runs[0]
-            run_loc.text = event.location
-
-            price_text_frame = event_shape.priceShape.text_frame
-            p_price = price_text_frame.paragraphs[0]
-            p_price.runs[0].text = ""
-            p_price.alignment = PP_ALIGN.RIGHT
-            clearTextboxText(p_price, price_text_frame)
-            run_price = p_price.runs[0]
-            if language == "1": 
-                if event.price != "" and event.price != FORBIDDEN_SENTENCE_HEBREW:
-                    run_price.text = event.price
-            else:
-                if event.price != "" and event.price != FORBIDDEN_SENTENCE_ARABIC:
-                    run_price.text = event.price
-
-    elif isFriday == False: #isDouble == True, isFriday should be False, it's a double event
-        event_shape = double_event_shape
-        slide.shapes.element.remove(single_event_shape.shape.element)
-
-
-        title1_text_frame = event_shape.title1Shape.text_frame
-        p_title1 = title1_text_frame.paragraphs[0]
-        p_title1.runs[0].text = ""
-        p_title1.alignment = PP_ALIGN.RIGHT
-        clearTextboxText(p_title1, title1_text_frame)
-        run_title1 = p_title1.runs[0]
-        run_title1.text = event.hour + ": " + event.title
-
-        title2_text_frame = event_shape.title2Shape.text_frame
-        p_title2 = title2_text_frame.paragraphs[0]
-        p_title2.runs[0].text = ""
-        p_title2.alignment = PP_ALIGN.RIGHT
-        clearTextboxText(p_title2, title2_text_frame)
-        run_title2 = p_title2.runs[0]
-        run_title2.text = next_event.hour + ": " + next_event.title
-
-        loc1_text_frame = event_shape.loc1Shape.text_frame
-        p_loc1 = loc1_text_frame.paragraphs[0]
-        p_loc1.alignment = PP_ALIGN.RIGHT
-        clearTextboxText(p_loc1, loc1_text_frame)
-        run_loc1 = p_loc1.runs[0]
-        run_loc1.text = event.location
-
-        loc2_text_frame = event_shape.loc2Shape.text_frame
-        p_loc2 = loc2_text_frame.paragraphs[0]
-        p_loc2.alignment = PP_ALIGN.RIGHT
-        clearTextboxText(p_loc2, loc2_text_frame)
-        run_loc2 = p_loc2.runs[0]
-        run_loc2.text = next_event.location
-
-        price1_text_frame = event_shape.price1Shape.text_frame
-        p_price1 = price1_text_frame.paragraphs[0]
-        p_price1.runs[0].text = ""
-        p_price1.alignment = PP_ALIGN.RIGHT
-        clearTextboxText(p_price1, price1_text_frame)
-        run_price1 = p_price1.runs[0]
-        if language == "1": 
-            if event.price != "" and event.price != FORBIDDEN_SENTENCE_HEBREW:
-                run_price1.text = event.price
-        else:
-            if event.price != "" and event.price != FORBIDDEN_SENTENCE_ARABIC:
-                run_price1.text = event.price
-
-        if event.isFree == False:
-            free1Element = event_shape.free1Shape
-            event_shape.shape.shapes.element.remove(free1Element.element)
-
-        if event.isZoom == False:
-            zoom1Element = event_shape.zoom1Shape
-            event_shape.shape.shapes.element.remove(zoom1Element.element)
-
-        price2_text_frame = event_shape.price2Shape.text_frame
-        p_price2 = price2_text_frame.paragraphs[0]
-        p_price2.runs[0].text = ""
-        p_price2.alignment = PP_ALIGN.RIGHT
-        clearTextboxText(p_price2, price2_text_frame)
-        run_price2 = p_price2.runs[0]
-        if language == "1": 
-            if next_event.price != "" and next_event.price != FORBIDDEN_SENTENCE_HEBREW:
-                run_price2.text = next_event.price
-        else:
-            if next_event.price != "" and next_event.price != FORBIDDEN_SENTENCE_ARABIC:
-                run_price2.text = next_event.price
-
-        if next_event.isFree == False:
-            run_price2.text = next_event.price
-            free2Element = event_shape.free2Shape
-            event_shape.shape.shapes.element.remove(free2Element.element)
-
-        if next_event.isZoom == False:
-            zoom2Element = event_shape.zoom2Shape
-            event_shape.shape.shapes.element.remove(zoom2Element.element)
-
-            i+=1
-
-    firstDayReached = False 
-    lastDayReached = False
-    lastDayOfMonth = calendar.monthrange(year, month)[1]
-    numOfShapeOfLastDay = get_number_of_shape(year, month, lastDayOfMonth)
-    lastDayIsFriday = (numOfShapeOfLastDay == 100)
-    lastDayIsSaurday = (numOfShapeOfLastDay == -1)
-
-    for i in range(25):
-        if singleEventsShape[i].dateShape.text == "6" and ((not firstDayReached) and (not lastDayReached)):
-            slide.shapes.element.remove(doubleEventsShape[i].shape.element)
-            singleEventsShape[i].shape.shapes.element.remove(singleEventsShape[i].dateShape.element)
-            singleEventsShape[i].shape.shapes.element.remove(singleEventsShape[i].titleShape.element)
-            singleEventsShape[i].shape.shapes.element.remove(singleEventsShape[i].text1Shape.element)
-            singleEventsShape[i].shape.shapes.element.remove(singleEventsShape[i].locShape.element)
-            singleEventsShape[i].shape.shapes.element.remove(singleEventsShape[i].priceShape.element)
-            singleEventsShape[i].shape.shapes.element.remove(singleEventsShape[i].freeShape.element)
-            singleEventsShape[i].shape.shapes.element.remove(singleEventsShape[i].zoomShape.element)
-            continue
-        else:
-            firstDayReached = True
-        if singleEventsShape[i].isTreated == False and doubleEventsShape[i].isTreated == False:
-            slide.shapes.element.remove(doubleEventsShape[i].shape.element)
-
-            #if lastDayReached and singleEventsShape[i].dateShape.text == "6":
-            if lastDayReached:
-                singleEventsShape[i].shape.shapes.element.remove(singleEventsShape[i].dateShape.element)
-                singleEventsShape[i].shape.shapes.element.remove(singleEventsShape[i].titleShape.element)
-                singleEventsShape[i].shape.shapes.element.remove(singleEventsShape[i].text1Shape.element)
-                singleEventsShape[i].shape.shapes.element.remove(singleEventsShape[i].locShape.element)
-                singleEventsShape[i].shape.shapes.element.remove(singleEventsShape[i].priceShape.element)
-                singleEventsShape[i].shape.shapes.element.remove(singleEventsShape[i].freeShape.element)
-                singleEventsShape[i].shape.shapes.element.remove(singleEventsShape[i].zoomShape.element)
-                if (lastDayIsFriday or lastDayIsSaurday):
-                    slide.shapes.element.remove(singleEventsShape[i].shape.element)
-            else:
-                singleEventsShape[i].shape.shapes.element.remove(singleEventsShape[i].titleShape.element)
-                singleEventsShape[i].shape.shapes.element.remove(singleEventsShape[i].text1Shape.element)
-                singleEventsShape[i].shape.shapes.element.remove(singleEventsShape[i].locShape.element)
-                singleEventsShape[i].shape.shapes.element.remove(singleEventsShape[i].priceShape.element)
-                singleEventsShape[i].shape.shapes.element.remove(singleEventsShape[i].freeShape.element)
-                singleEventsShape[i].shape.shapes.element.remove(singleEventsShape[i].zoomShape.element)
-        if not lastDayReached:
-            if int(singleEventsShape[i].dateShape.text) == lastDayOfMonth:
-                lastDayReached = True
-            elif lastDayIsFriday and int(singleEventsShape[i].dateShape.text) == lastDayOfMonth - 1:
-                lastDayReached = True
-            elif lastDayIsSaurday and int(singleEventsShape[i].dateShape.text) == lastDayOfMonth - 2:
-                lastDayReached = True
-
-
-    if fridayEventsShape:
-        for i in range(fridayCount, 5):
-            slide.shapes.element.remove(fridayEventsShape[i].shape.element)
 
 def get_shape_type(day_in_month, month):
     excelEvents = excelEventsDictionary[month]
@@ -1499,7 +1421,7 @@ def treatSingleShape(slide, single_event_shape, double_event_shape, shape_day_in
     excelEvent = excelEvents[shape_day_in_month]
 
     slide.shapes.element.remove(double_event_shape.shape.element)
-    treatTags(excelEvent, single_event_shape) #TODO: implement me
+    treatTags(slide, excelEvent, single_event_shape) #TODO: implement me
 
     if excelEvent.shapeType is shapeType.REGULAR:
         slide.shapes.element.remove(single_event_shape.bgPicShape.shape.element)
@@ -1519,9 +1441,9 @@ def treatDoubleShape(slide, single_event_shape, double_event_shape, shape_day_in
     secondExcelEvent = excelEvents[shape_day_in_month][1]
 
     slide.shapes.element.remove(single_event_shape.shape.element)
-    treatTags(firstExcelEvent, secondExcelEvent, double_event_shape) #TODO: implement me
+    treatTags(slide, firstExcelEvent, None, secondExcelEvent, double_event_shape) #TODO: implement me
 
-    slide.shapes.element.remove(double_event_shape.bgPicShape.shape.element)
+    slide.shapes.element.remove(slide, double_event_shape.bgPicShape.shape.element)
 
     writeTextToTextbox(double_event_shape.titleShape1.text_frame, firstExcelEvent.hour + " - " + firstExcelEvent.title) #TODO: make the title an hyperlink
     writeTextToTextbox(double_event_shape.locationShape1.text_frame, firstExcelEvent.location)
@@ -1550,33 +1472,39 @@ def writeTextToTextbox(shape_text_frame, text):
     run.text = text
 
 
-def treatTags(slide, excelEvent, secondExcelEvent = None, single_event_shape, double_event_shape = None):
+def treatTags(slide, excelEvent, single_event_shape, secondExcelEvent = None, double_event_shape = None):
+    event_shape = single_event_shape
     excelEventCommunity = excelEvent.community
+    isDoubleShape = False
     secondExcelEventCommunity = None
     if secondExcelEvent != None:
         secondExcelEventCommunity = secondExcelEvent.community
+        event_shape = double_event_shape
+        isDoubleShape = True
 
-    allCommunities = Communities.communitiesArray
-    allCommunitiesStrings = Communities.communitiesStringArray
+    excelCommunitiesStrings = ExcelCommunitiesStrings()
+    excelCommunitiesStringsArray = excelCommunitiesStrings.excelCommunitiesStringsArray
+    allCommunities = [e for e in Community]
+
 
     for i in range(len(allCommunities)):
-        if double_event_shape == None:
-            if allCommunities[i] is not excelEventCommunity:
-                commString = allCommunitiesStrings[i]
-                suffix = "1" if double_event_shape != None else ""
-                attrToRemove = getattr(singleEventsShape, "tag" + commString.removesuffix('String') + suffix)
-                slide.shapes.element.remove(attrToRemove.shape.element)
-        if double_event_shape != None:
+        if allCommunities[i] is not excelEventCommunity:
+            commString = excelCommunitiesStrings[i]
+            suffix = "1" if secondExcelEvent != None else ""
+            attrToRemove = getattr(event_shape, "tag" + commString + suffix)
+            slide.shapes.element.remove(attrToRemove.shape.element)
+
+        if isDoubleShape:
             if allCommunities[i] is not secondExcelEventCommunity:
-                commString = allCommunitiesStrings[i]
                 suffix = 2
-                attrToRemove = getattr(singleEventsShape, "tag" + commString.removesuffix('String') + suffix)
+                attrToRemove = getattr(event_shape, "tag" + commString + suffix)
                 slide.shapes.element.remove(attrToRemove.shape.element)
+
 
 
 def main():
     try:
-        metaData = MetaData()
+        MetaData()
         create_program_GUI()
     except Exception as e:
         if str(e)=="קובץ ה-cache אינו תקין":
