@@ -2,6 +2,7 @@
 import openpyxl
 from openpyxl.utils import get_column_letter
 import datetime
+import pptx
 from pptx import Presentation
 from pptx.enum.shapes import MSO_SHAPE  # Class in which the shape type is defined
 from pptx.enum.shapes import MSO_SHAPE_TYPE
@@ -1417,7 +1418,7 @@ def treatSingleShape(slide, single_event_shape, double_event_shape, shape_day_in
         single_event_shape.bgPicShape._element.getparent().remove(single_event_shape.bgPicShape._element) #TODO: check how to properly remove pictures
         single_event_shape.bgShape._element.getparent().remove(single_event_shape.bgShape._element)
 
-    writeTextToTextbox(single_event_shape.titleShape.text_frame, excelEvent.hour + " - " + excelEvent.title, link = excelEvent.link) #TODO: make the title an hyperlink
+    writeTextToTextbox(single_event_shape.titleShape.text_frame, excelEvent.hour + " - " + excelEvent.title, link = excelEvent.link) 
     writeTextToTextbox(single_event_shape.locationShape.text_frame, excelEvent.location)
     writeTextToTextbox(single_event_shape.priceShape.text_frame, excelEvent.price)
 
@@ -1433,10 +1434,10 @@ def treatDoubleShape(slide, single_event_shape, double_event_shape, shape_day_in
 
     double_event_shape.bgPicShape._element.getparent().remove(double_event_shape.bgPicShape._element)
 
-    writeTextToTextbox(double_event_shape.titleShape1.text_frame, firstExcelEvent.hour + " - " + firstExcelEvent.title, link = firstExcelEvent.link) #TODO: make the title an hyperlink
+    writeTextToTextbox(double_event_shape.titleShape1.text_frame, firstExcelEvent.hour + " - " + firstExcelEvent.title, link = firstExcelEvent.link)
     writeTextToTextbox(double_event_shape.locationShape1.text_frame, firstExcelEvent.location)
     writeTextToTextbox(double_event_shape.priceShape1.text_frame, firstExcelEvent.price)
-    writeTextToTextbox(double_event_shape.titleShape2.text_frame, secondExcelEvent.hour + " - " + secondExcelEvent.title, link = secondExcelEvent.link) #TODO: make the title an hyperlink
+    writeTextToTextbox(double_event_shape.titleShape2.text_frame, secondExcelEvent.hour + " - " + secondExcelEvent.title, link = secondExcelEvent.link)
     writeTextToTextbox(double_event_shape.locationShape2.text_frame, secondExcelEvent.location)
     writeTextToTextbox(double_event_shape.priceShape2.text_frame, secondExcelEvent.price)
 
@@ -1449,7 +1450,28 @@ def treatPicShape(slide, single_event_shape, double_event_shape):
     single_event_shape.locationShape._element.getparent().remove(single_event_shape.locationShape._element)
     single_event_shape.priceShape._element.getparent().remove(single_event_shape.priceShape._element)
     treatTags(slide, None, single_event_shape, None, double_event_shape)
+
+    image_path = get_random_image()
+    group_left = single_event_shape.shape.left
+    group_top = single_event_shape.shape.top
+
+    left = single_event_shape.bgPicShape.left + group_left
+    print("pic shape LEFT: " + str(left))
+    top = single_event_shape.bgPicShape.top + group_top
+    print("pic shape TOP: " + str(top))
+    width = single_event_shape.bgPicShape.width
+    print("pic shape WIDTH: " + str(width))
+    height = single_event_shape.bgPicShape.height
+    print("pic shape HEIGHT: " + str(height))
+
+    slide.shapes.add_picture(image_path, group_left, group_top, width, height)
+    single_event_shape.bgPicShape._element.getparent().remove(single_event_shape.bgPicShape._element)
+
+
+def get_random_image():
     #TODO: implement random picture for bgPicShape
+    return "Default_little_girl_with_tenticles_instead_of_legs_wearing_a_g_2.jpg"
+
 
 
 def writeTextToTextbox(shape_text_frame, text, link = None):
