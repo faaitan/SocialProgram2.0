@@ -1,17 +1,10 @@
 
-import sys
-import traceback
 import openpyxl
 from openpyxl.utils import get_column_letter
 import datetime
 from pptx import Presentation
 from pptx.enum.shapes import MSO_SHAPE  # Class in which the shape type is defined
 from pptx.enum.shapes import MSO_SHAPE_TYPE
-from pptx.dml.color import RGBColor    # Color management class
-from pptx.util import Cm,Pt            # Class to specify units (centimeters, points)
-from pptx.util import Inches, Pt
-import subprocess
-import time
 import numpy as np
 from pptx.enum.text import PP_ALIGN
 import easygui
@@ -263,7 +256,7 @@ def readExcel(excel_name):
     except CellCoordinatesException:
         raise Exception("שגיאת המרה בין ערך נומרי ל-A1-style")
     except IllegalCharacterError:
-        raise Exeption("קובץ האקסל מכיל תוים לא חוקייים")
+        raise Exception("קובץ האקסל מכיל תוים לא חוקייים")
     except InvalidFileException:
         raise Exception("שיגאה בעת נסיון פתיחת קובץ שאינו קובץ אקסל")
 
@@ -381,7 +374,7 @@ def getEventsFromExcel(sheet):
                 raise Exception("קובץ האקסל מכיל מעל לשני חודשים")
 
         if excelEvent.eventType is EventType.PEAK:
-            peakEventsDictionary[excelEvent.Community] = excelEvent
+            peakEventsDictionary[excelEvent.community] = excelEvent
         else:
             addToExcelEventDictionary(excelEvent, dictionary)
              
@@ -441,8 +434,6 @@ def getEventTypeFromString(eventTypeString):
     else:
         return EventType.REGULAR
 
-
-
  
 # get_text_boxes(slide, months)
 #     Itereates through all powerpoint shapes (using iter_textframed_shapes method) that contain textboxes, sort them,
@@ -460,9 +451,6 @@ def get_slide_shapes(slide, isFirstSlide = False):
     first_slide_groups, first_slide_month1_shape, first_slide_month2_shape = find_groups(slide.shapes, isFirstSlide)[3:]
     header_shape_dict = {}
     first_slide_shapes_dict = {}
-
-    # singles = reversed(singles) #TODO: Check if unnecessary
-    # doubles = reversed(doubles)
 
     if not isFirstSlide:
 
@@ -647,84 +635,90 @@ def get_slide_shapes(slide, isFirstSlide = False):
         print("num of groups in first slide = " + str(len(first_slide_groups)))
 
         for g in first_slide_groups:
+            print(g.name)
             if g.name == "SINGLES 1":
-                for shape in iter_textable_shapes(g.shapes):
-                    if shape.name == "TextBox 1":
+                if len(g.shapes) > 0:
+                    for shape in g.shapes:
+                        print([shape.name for shape in g.shapes])
+                for shape in g.shapes:
+                    print(shape.name)
+                    if shape.name == "title":
+                        print("writing title shape to dict")
                         first_slide_shapes_dict["Singles1TitleShape"] = shape
-                    elif shape.name == "TextBox 2":
+                    elif shape.name == "info":
                         first_slide_shapes_dict["Singles1TextShape"] = shape
             elif g.name == "SINGLES 2":
-                for shape in iter_textable_shapes(g.shapes):
-                    if shape.name == "TextBox 1":
+                for shape in g.shapes:
+                    if shape.name == "title":
                         first_slide_shapes_dict["Singles2TitleShape"] = shape
-                    elif shape.name == "TextBox 2":
+                    elif shape.name == "info":
                         first_slide_shapes_dict["Singles2TextShape"] = shape
             elif g.name == "YOLO 1":
-                for shape in iter_textable_shapes(g.shapes):
-                    if shape.name == "TextBox 1":
-                        first_slide_shapes_dict["YOLO1TitleShape"] = shape
-                    elif shape.name == "TextBox 2":
-                        first_slide_shapes_dict["YOLO1TextShape"] = shape
+                for shape in g.shapes:
+                    if shape.name == "title":
+                        first_slide_shapes_dict["Yolo1TitleShape"] = shape
+                    elif shape.name == "info":
+                        first_slide_shapes_dict["Yolo1TextShape"] = shape
             elif g.name == "YOLO 2":
-                for shape in iter_textable_shapes(g.shapes):
-                    if shape.name == "TextBox 1":
-                        first_slide_shapes_dict["YOLO2TitleShape"] = shape
-                    elif shape.name == "TextBox 2":
-                        first_slide_shapes_dict["YOLO2TextShape"] = shape
+                for shape in g.shapes:
+                    if shape.name == "title":
+                        first_slide_shapes_dict["Yolo2TitleShape"] = shape
+                    elif shape.name == "info":
+                        first_slide_shapes_dict["Yolo2TextShape"] = shape
             elif g.name == "KULTURA 1":
-                for shape in iter_textable_shapes(g.shapes):
-                    if shape.name == "TextBox 1":
+                for shape in g.shapes:
+                    if shape.name == "title":
                         first_slide_shapes_dict["Kultura1TitleShape"] = shape
-                    elif shape.name == "TextBox 2":
+                    elif shape.name == "info":
                         first_slide_shapes_dict["Kultura1TextShape"] = shape
             elif g.name == "KULTURA 2":
-                for shape in iter_textable_shapes(g.shapes):
-                    if shape.name == "TextBox 1":
+                for shape in g.shapes:
+                    if shape.name == "title":
                         first_slide_shapes_dict["Kultura2TitleShape"] = shape
-                    elif shape.name == "TextBox 2":
+                    elif shape.name == "info":
                         first_slide_shapes_dict["Kultura2TextShape"] = shape
             elif g.name == "TIULA 1":
-                for shape in iter_textable_shapes(g.shapes):
-                    if shape.name == "TextBox 1":
+                for shape in g.shapes:
+                    if shape.name == "title":
                         first_slide_shapes_dict["Tiula1TitleShape"] = shape
-                    elif shape.name == "TextBox 2":
+                    elif shape.name == "info":
                         first_slide_shapes_dict["Tiula1TextShape"] = shape
             elif g.name == "TIULA 2":
-                for shape in iter_textable_shapes(g.shapes):
-                    if shape.name == "TextBox 1":
+                for shape in g.shapes:
+                    if shape.name == "title":
                         first_slide_shapes_dict["Tiula2TitleShape"] = shape
-                    elif shape.name == "TextBox 2":
+                    elif shape.name == "info":
                         first_slide_shapes_dict["Tiula2TextShape"] = shape
             elif g.name == "GOLDERS 1":
-                for shape in iter_textable_shapes(g.shapes):
-                    if shape.name == "TextBox 1":
+                for shape in g.shapes:
+                    if shape.name == "title":
                         first_slide_shapes_dict["Golders1TitleShape"] = shape
-                    elif shape.name == "TextBox 2":
+                    elif shape.name == "info":
                         first_slide_shapes_dict["Golders1TextShape"] = shape
             elif g.name == "GOLDERS 2":
-                for shape in iter_textable_shapes(g.shapes):
-                    if shape.name == "TextBox 1":
+                for shape in g.shapes:
+                    if shape.name == "title":
                         first_slide_shapes_dict["Golders2TitleShape"] = shape
-                    elif shape.name == "TextBox 2":
+                    elif shape.name == "info":
                         first_slide_shapes_dict["Golders2TextShape"] = shape
             elif g.name == "WOMEN 1":
-                for shape in iter_textable_shapes(g.shapes):
-                    if shape.name == "TextBox 1":
+                for shape in g.shapes:
+                    if shape.name == "title":
                         first_slide_shapes_dict["Women1TitleShape"] = shape
-                    elif shape.name == "TextBox 2":
+                    elif shape.name == "info":
                         first_slide_shapes_dict["Women1TextShape"] = shape
             elif g.name == "WOMEN 2":
-                for shape in iter_textable_shapes(g.shapes):
-                    if shape.name == "TextBox 1":
+                for shape in g.shapes:
+                    if shape.name == "title":
                         first_slide_shapes_dict["Women2TitleShape"] = shape
-                    elif shape.name == "TextBox 2":
+                    elif shape.name == "info":
                         first_slide_shapes_dict["Women2TextShape"] = shape
             elif g.name == "FOOTER":
-                for shape in iter_textable_shapes(g.shapes):
+                for shape in g.shapes:
                     if shape.name == "NAME AND TEL":
                         first_slide_shapes_dict["contact"] = shape
             elif g.name == "HEADER":
-                for shape in iter_textable_shapes(g.shapes):
+                for shape in g.shapes:
                     if shape.name == "MONTHES":
                         first_slide_shapes_dict["monthes"] = shape
                     elif shape.name == "YEAR":
@@ -733,18 +727,10 @@ def get_slide_shapes(slide, isFirstSlide = False):
         first_slide_shapes_dict["month1"] = first_slide_month1_shape
         first_slide_shapes_dict["month2"] = first_slide_month2_shape
 
+        print(first_slide_shapes_dict)
+
         return first_slide_shapes_dict
         
-
-
-# get_int_from_shape_name(shape_name)
-#     Get the number of the given shape name
-#     Arguments:
-#         shape_name: the shape object name, expecting name of format "XXX %d"
-#     Returns:
-#         the number in the shape name
-#     Exceptions:
-#         * Wrong element name format
 
 def find_groups(shapes, isFirstSlide = True):
 
@@ -795,50 +781,6 @@ def find_groups(shapes, isFirstSlide = True):
     return singles, doubles, header, first_slide_groups, first_slide_month1_shape, first_slide_month2_shape
 
 
-def get_int_from_shape_name(shape_name):
-    try: 
-        shape_name_list = shape_name.split()
-        return int(shape_name_list[1])
-    except:
-        raise Exception("שמות האלמנטים בקובץ הפאוורפוינט לדוגמא חייבים להיות מהצורה ELEMENT num, למשל ELEMENT 12")
-
-
-# createMonthObjects(shape, months, monthIndex):
-#     Fill the given shape with the string representation of the months list in the given monthIndex
-#     Arguments:
-#         shape: shape Object to be filled with the month string representation
-#         months: a list of numerical months representation (for example: [1,4])
-#         monthIndex: the index of the month in the months array to be written in the shape in it's string representation
-#     Exceptions: 
-#         * Month should be 1-12. no month representing for "+str(int_month)
-
-def createMonthObjects(shape, months, monthIndex):
-    month = months[monthIndex]
-    month_text_frame = shape.text_frame
-    p_month = month_text_frame.paragraphs[0]
-    p_month.alignment = PP_ALIGN.RIGHT
-    clearTextboxText(p_month, month_text_frame)
-    run_month = p_month.runs[0]
-    run_month.text = month
-
-def createAreaObjects(shape, area):
-    area_text_frame = shape.text_frame
-    p_area = area_text_frame.paragraphs[0]
-    p_area.alignment = PP_ALIGN.RIGHT
-    clearTextboxText(p_area, area_text_frame)
-    run_area = p_area.runs[0]
-    run_area.text = area
-
-def createContactObject(shape, contact):
-    contact_text_frame = shape.text_frame
-    p_contact = contact_text_frame.paragraphs[0]
-    p_contact.alignment = PP_ALIGN.CENTER
-    clearTextboxText(p_contact, contact_text_frame)
-    run_contact = p_contact.runs[0]
-    run_contact.text = contact
-
-
-
 # iter_textframed_shapes(shapes):
 #     Itereates through all powerpoint shapes (using iter_textable_shapes method) that contain textboxes and yields
 #     the leaf shapes with text boxes and their parent group shapes
@@ -858,7 +800,7 @@ def iter_textframed_shapes(shapes):
             group_shape = shape
             yield shape
             iter_textframed_shapes(group_shape.shapes)
-            for shape in iter_textable_shapes(group_shape.shapes):
+            for shape in group_shape.shapes:
                 yield shape
             continue
 
@@ -874,21 +816,9 @@ def iter_textframed_shapes(shapes):
 #     Returns:
 #         a leaf shape with textbox
 
-def iter_textable_shapes(shapes):
-    for shape in shapes:
-            yield shape
-
-
-# iter_textable_shapes(shapes):
-#     *some magic*
-#     Arguments:
-#         array: the list to be right-ordered
-#     Returns:
-#         right-ordered list
-
-def createRightOrder(array):
-    return np.append(array[MAX_SECOND_MONTH_EVENT_COUNT:], array[:MAX_SECOND_MONTH_EVENT_COUNT])
-
+# def iter_textable_shapes(shapes):
+#     for shape in shapes:
+#             yield shape
 
 
 # create_program_GUI():
@@ -928,14 +858,6 @@ def create_program_GUI():
             textbox2.delete(1.0,tk.END)
         textbox2.insert(tk.END, pptxFilePath)
         textbox2.configure(state="disabled")
-
-
-    def assignFileLocation(value):
-        global fileLocation 
-        fileLocation = value;
-        place_textbox.configure(state = "normal")
-        place_textbox.insert(tk.END, fileLocation)
-        place_textbox.configure(state="disabled")
 
     try:
 
@@ -1141,14 +1063,15 @@ def createPptxPlans(month1, month2, area, contact, year, language):
             first_slide = presentation.slides[0]
             second_slide = presentation.slides[1]
 
-            print("starting to process first slide")
             processFirstSlide(first_slide)
             print("first slide is done")
             processSecondSlide(second_slide, True)
             print("second slide is done")
 
+            defaultFileName = "תוכניה " + month1 + "-" + month2
+
             files = [('Powerpoint files', '*.pptx')]
-            saved_file = asksaveasfile(filetypes = files, defaultextension = files) #TODO: add default file name
+            saved_file = asksaveasfile(filetypes = files, defaultextension = files, initialfile  = defaultFileName + " - 1") #TODO: add default file name
             try:
                 presentation.save(saved_file.name)
             except PermissionError: 
@@ -1162,15 +1085,18 @@ def createPptxPlans(month1, month2, area, contact, year, language):
             processFirstSlide(first_slide)
             processSecondSlide(second_slide, False)
 
-            saved_file2 = asksaveasfile(filetypes = files, defaultextension = files)
+            saved_file2 = asksaveasfile(filetypes = files, defaultextension = files, initialfile  = defaultFileName + " - 2")
             try:
                 presentation.save(saved_file2.name)
                 easygui.msgbox("הקבצים נוצרו בהצלחה!")
             except PermissionError: 
                 easygui.msgbox("הקובץ \n"+ saved_file2.name+"\n פתוח. יש לסגור אותו בעת הרצת התוכנית")
 
-        except IndexError:
-            raise Exception("תבנית ה-powerpoint מכילה פחות מ-2 שקפים")
+        except IndexError as e:
+            if len(presentation.slides) > 2:
+                raise Exception("תבנית ה-powerpoint מכילה פחות מ-2 שקפים")
+            else:
+                raise Exception("שגיאה: Index Out of Range")
 
     except Exception as e:
         easygui.msgbox("שגיאה :"+ str(e))
@@ -1196,15 +1122,21 @@ def processFirstSlide(slide):
         community = Community[commString.upper()]
         for i in range(1,3):
             dictionary = dictionaries[i-1]
+            titleKey = commString + str(i) + "TitleShape"
+            textKey = commString + str(i) + "TextShape"
             if community in dictionary:
-                titleKey = commString + str(i) + "TitleShape"
-                textKey = commString + str(i) + "TextShape"
+                full_date = create_date_string(dictionary[community].date, increased_year_string)
                 title = excelCommunitiesStrings.excelCommunitiesStringsArray[index] + " - " + dictionary[community].title
-                text = dictionary[community].location + " | " + dictionary[community].date
-                + "."+ increased_year_string + " | " + dictionary[community].hour
+                text = dictionary[community].location + " | " + full_date + " | " + dictionary[community].hour
+                writeTextToTextbox(first_slide_shapes_dict[titleKey].text_frame, title, link = dictionary[community].link)
+                writeTextToTextbox(first_slide_shapes_dict[textKey].text_frame, text)
+            else:
+                title = excelCommunitiesStrings.excelCommunitiesStringsArray[index]
+                text = "ניפגש בחודשים הבאים!"
+                print(titleKey)
+                print(first_slide_shapes_dict[titleKey])
                 writeTextToTextbox(first_slide_shapes_dict[titleKey].text_frame, title)
                 writeTextToTextbox(first_slide_shapes_dict[textKey].text_frame, text)
-
 
     print(first_slide_shapes_dict)
     writeTextToTextbox(first_slide_shapes_dict["year"].text_frame, year)
@@ -1212,6 +1144,16 @@ def processFirstSlide(slide):
     writeTextToTextbox(first_slide_shapes_dict["month2"].text_frame, month2)
     writeTextToTextbox(first_slide_shapes_dict["monthes"].text_frame, month1 + "-" + month2)
     writeTextToTextbox(first_slide_shapes_dict["contact"].text_frame, contact)
+
+
+def create_date_string(month_and_day_string, year_string):
+    arr = month_and_day_string.split('.')
+    day = arr[0]
+    month = arr[1]
+    month = month.replace(" ", "")
+    date_string = day + "." + month + "." + year_string
+    print("Date String = " + date_string)
+    return date_string
 
 
 def processSecondSlide(slide, isFirstPresentation):
@@ -1244,11 +1186,8 @@ def clearTextboxText(text_frame):
 def get_number_of_shape(year, month, day):
     numOfDaysInMonth = calendar.monthrange(year, month)[1]
     x = np.array(calendar.monthcalendar(year, month))
-    print("day: "+ str(day))
     week_of_month = np.where(x==day)[0][0] # 0 is first week
-    print("week_of_month: " + str(week_of_month))
     day_of_week = np.where(x == day)[1][0]+1 # 1 is Sunday
-    print("day_of_week: " + str(day_of_week))
     if day_of_week > 6: 
         return -1
     first_day_of_month = np.where(x == 1)[1][0] + 1 # for removing first week that starts on Friday or Saturday
@@ -1259,7 +1198,6 @@ def get_number_of_shape(year, month, day):
 
 
 def createCalendarDates(slide, singleEventShapes, doubleEventShapes, month, increaseYear = False):
-    print("month in createCalendarDates: " + str(month))
     year = int(MetaData.year)
     if increaseYear:
         year += 1
@@ -1267,13 +1205,10 @@ def createCalendarDates(slide, singleEventShapes, doubleEventShapes, month, incr
     processFirstDayOffs(slide, singleEventShapes, doubleEventShapes, year, month)
 
     numOfDaysInMonth = calendar.monthrange(year, month)[1]
-    print("num of days in month: " + str(numOfDaysInMonth))
     
 
     for i in range(1, numOfDaysInMonth+1):
-        print(month)
         num_of_shape = get_number_of_shape(year, month, i) - 1
-        print("shape number: " + str(num_of_shape))
         if num_of_shape < 0:
             continue
         else:
@@ -1299,7 +1234,6 @@ def removeShapeOffElements(slide, shape):
 
 
 def processFirstDayOffs(slide, singleEventShapes, doubleEventShapes, year, month):
-    print("month in processFirstDayOffs: " + str(month))
     prev_month = month - 1 if month != 1 else 12
     num_of_days_in_previous_month = calendar.monthrange(year, prev_month)[1]
 
@@ -1338,7 +1272,6 @@ def processLastDayOffs(slide, singleEventShapes, doubleEventShapes, year, month)
     year = year if next_month != 1 else year + 1
 
     while i + j < 36:
-        print("shape number: " + str(i+j))
         single_event_shape = singleEventShapes[i + j]
         double_event_shape = doubleEventShapes[i+j]
 
@@ -1349,13 +1282,9 @@ def processLastDayOffs(slide, singleEventShapes, doubleEventShapes, year, month)
             continue
 
 
-        print("going to write count off shape")
         writeTextToTextbox(single_event_shape.countOffShape.text_frame, str(j))
-        print("going to write day off shape")
         writeTextToTextbox(single_event_shape.dayOffShape.text_frame, hebrew_letter_of_day(weekday)) #TODO: deal with arabic
-        print("wrote day off shape")
         treat_off_shape(slide, single_event_shape, double_event_shape)
-        print("done with treat_off_shape")
 
         j += 1
     print("done with last day offs")
@@ -1363,15 +1292,11 @@ def processLastDayOffs(slide, singleEventShapes, doubleEventShapes, year, month)
 
 
 def treat_off_shape(slide, single_event_shape, double_event_shape):
-    print("entered treat_off_shape")
     double_event_shape.shape._element.getparent().remove(double_event_shape.shape._element)
-    print("removed double shape")
     for shape in single_event_shape.shape.shapes:
-        print("shape name: " + shape.name)
         if shape.name != "COUNT OFF" and shape.name != "DAY OFF" and shape.name != "SPINE BG OFF" and shape.name != "BG OFF":
             shape._element.getparent().remove(shape._element)
-            print("removed "+shape.name + " shape")
-    print("removed off days unnecessary elements!")
+
 
     # slide.shapes.element.remove(single_event_shape.titleShape.shape.element)
     # slide.shapes.element.remove(single_event_shape.locationShape.shape.element)
@@ -1420,20 +1345,15 @@ def writeTextToTextboxes(slide, singleEventShapes, doubleEventShapes, headerShap
     numOfDaysInMonth = int(calendar.monthrange(year, month)[1])
 
     for i in range(1, numOfDaysInMonth + 1):
-        print("entered the loop")
         shape_index = get_number_of_shape(year, month, i) - 1
         print("shape index = " + str(shape_index))
 
         if shape_index >= 0:
 
-            print("entered shape_index >= 0 if statement")
-
             single_event_shape = singleEventShapes[shape_index]
             double_event_shepe = doubleEventShapes[shape_index]
 
             shape_day_in_month = int(single_event_shape.countShape.text_frame.paragraphs[0].runs[0].text)
-
-            print("getting shape type in writeTextToTextboxes")
 
             type = get_shape_type(shape_day_in_month, month)
 
@@ -1448,7 +1368,6 @@ def writeTextToTextboxes(slide, singleEventShapes, doubleEventShapes, headerShap
     
     monthString = MetaData.firstMonthName if isFirstPresentation else MetaData.secondMonthName
 
-    print(headerShape)
 
     writeTextToTextbox(headerShape["zone"].text_frame, MetaData.zone)
     writeTextToTextbox(headerShape["month"].text_frame, monthString)
@@ -1482,7 +1401,7 @@ def treatSingleShape(slide, single_event_shape, double_event_shape, shape_day_in
         single_event_shape.bgPicShape._element.getparent().remove(single_event_shape.bgPicShape._element) #TODO: check how to properly remove pictures
         single_event_shape.bgShape._element.getparent().remove(single_event_shape.bgShape._element)
 
-    writeTextToTextbox(single_event_shape.titleShape.text_frame, excelEvent.hour + " - " + excelEvent.title) #TODO: make the title an hyperlink
+    writeTextToTextbox(single_event_shape.titleShape.text_frame, excelEvent.hour + " - " + excelEvent.title, link = excelEvent.link) #TODO: make the title an hyperlink
     writeTextToTextbox(single_event_shape.locationShape.text_frame, excelEvent.location)
     writeTextToTextbox(single_event_shape.priceShape.text_frame, excelEvent.price)
 
@@ -1496,17 +1415,14 @@ def treatDoubleShape(slide, single_event_shape, double_event_shape, shape_day_in
 
     treatTags(slide, firstExcelEvent, single_event_shape, secondExcelEvent, double_event_shape) #TODO: implement me
 
-    print("treated Double shape tags")
-
     double_event_shape.bgPicShape._element.getparent().remove(double_event_shape.bgPicShape._element)
 
-    writeTextToTextbox(double_event_shape.titleShape1.text_frame, firstExcelEvent.hour + " - " + firstExcelEvent.title) #TODO: make the title an hyperlink
+    writeTextToTextbox(double_event_shape.titleShape1.text_frame, firstExcelEvent.hour + " - " + firstExcelEvent.title, link = firstExcelEvent.link) #TODO: make the title an hyperlink
     writeTextToTextbox(double_event_shape.locationShape1.text_frame, firstExcelEvent.location)
     writeTextToTextbox(double_event_shape.priceShape1.text_frame, firstExcelEvent.price)
-    writeTextToTextbox(double_event_shape.titleShape2.text_frame, secondExcelEvent.hour + " - " + secondExcelEvent.title) #TODO: make the title an hyperlink
+    writeTextToTextbox(double_event_shape.titleShape2.text_frame, secondExcelEvent.hour + " - " + secondExcelEvent.title, link = secondExcelEvent.link) #TODO: make the title an hyperlink
     writeTextToTextbox(double_event_shape.locationShape2.text_frame, secondExcelEvent.location)
     writeTextToTextbox(double_event_shape.priceShape2.text_frame, secondExcelEvent.price)
-    print("treated Double shape")
 
 
 def treatPicShape(slide, single_event_shape, double_event_shape):
@@ -1520,17 +1436,18 @@ def treatPicShape(slide, single_event_shape, double_event_shape):
     #TODO: implement random picture for bgPicShape
 
 
-def writeTextToTextbox(shape_text_frame, text):
+def writeTextToTextbox(shape_text_frame, text, link = None):
     clearTextboxText(shape_text_frame)
     text_frame_paragraph = shape_text_frame.paragraphs[0]
     text_frame_paragraph.alignment = PP_ALIGN.RIGHT
     run = text_frame_paragraph.runs[0]
     run.text = text
+    if link != None:
+        run.hyperlink.address = link
 
 
 def treatTags(slide, excelEvent, single_event_shape, secondExcelEvent, double_event_shape):
     event_shape = single_event_shape
-    print(type(excelEvent))
     excelEventCommunity = excelEvent.community if excelEvent != None else None
     isDoubleShape = False
     secondExcelEventCommunity = None
@@ -1557,16 +1474,10 @@ def treatTags(slide, excelEvent, single_event_shape, secondExcelEvent, double_ev
                 commString = communitiesStringsArray[i]
                 suffix = "2"
                 attrToRemove = getattr(event_shape, "tag" + commString + suffix)
-                print(type(attrToRemove))
-                print("TREAT TAGS!\n")
-                print(type(attrToRemove._element.getparent()))
-                print(attrToRemove._element.getparent())
                 attrToRemove._element.getparent().remove(attrToRemove._element)
 
 
 def removeAllTags(event_shape):
-    print(event_shape)
-    print(type(event_shape))
     excelCommunitiesStrings = ExcelCommunitiesStrings()
     allCommunities = [e for e in Community]
     communitiesStringsArray = excelCommunitiesStrings.communitiesStringsArray
@@ -1574,10 +1485,6 @@ def removeAllTags(event_shape):
     for i in range(len(allCommunities)):
         commString = communitiesStringsArray[i]
         attrToRemove = getattr(event_shape, "tag" + commString)
-        print(attrToRemove)
-        print(type(attrToRemove))
-        print(type(attrToRemove._element.getparent()))
-        print(attrToRemove._element.getparent())
         attrToRemove._element.getparent().remove(attrToRemove._element)
 
 
