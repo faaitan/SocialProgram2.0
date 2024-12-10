@@ -127,6 +127,7 @@ class Community(Enum):
     WOMEN = 4
     GOLDERS = 5
     KULTURA = 6
+    YUMMIES = 7
 
 class ExcelCommunitiesStrings:
     def __init__(self):
@@ -136,6 +137,7 @@ class ExcelCommunitiesStrings:
         self.Women = "נשים"
         self.Golders = "גולדרס"
         self.Kultura = "קולטורה"
+        self.Yummies = "יאמיס"
         self.excelCommunitiesStringsArray = [item[1] for item in vars(self).items() if not (item[0] == "excelCommunitiesStringsArray" or item == "communitiesStringsArray")]
         self.communitiesStringsArray = [item[0] for item in vars(self).items() if not (item[0] == "excelCommunitiesStringsArray" or item == "communitiesStringsArray")]
 
@@ -164,8 +166,8 @@ class ShapeType(Enum):
 # text1Shape (shape), locationShape (shape) priceShape, freeShape (shape), zoomShape (shape)
 # and shape (the root element holding them all together)
 class SingleEventShape:
-    def __init__(self, titleShape, locationShape, priceShape, tagSingles, tagTiula, tagYolo, tagWomen, tagGolders, tagKultura, countShape, countOffShape, dayShape, dayOffShape,
-    spineBgShape, spineBgOffShape, bgHighlightShape, bgPicShape, bgOffShape, bgShape, shape, isTreated = False):
+    def __init__(self, titleShape, locationShape, priceShape, tagSingles, tagTiula, tagYolo, tagWomen, tagGolders, tagKultura, tagYummies, countShape, countOffShape, dayShape, dayOffShape,
+    spineBgShape, spineBgOffShape, bgHighlightShape, bgPicShape, bgOffShape, bgShape, shape):
         self.titleShape = titleShape
         self.locationShape = locationShape
         self.priceShape = priceShape
@@ -175,6 +177,7 @@ class SingleEventShape:
         self.tagWomen = tagWomen
         self.tagGolders = tagGolders
         self.tagKultura = tagKultura
+        self.tagYummies = tagYummies
         self.countShape = countShape
         self.countOffShape = countOffShape
         self.dayShape = dayShape
@@ -188,9 +191,9 @@ class SingleEventShape:
         self.shape = shape
 
 class DoubleEventShape:
-    def __init__(self, titleShape1, locationShape1, priceShape1, tagSingles1, tagTiula1, tagYolo1, tagWomen1, tagGolders1, tagKultura1,
-     titleShape2, locationShape2, priceShape2, tagSingles2, tagTiula2, tagYolo2, tagWomen2, tagGolders2, tagKultura2, countShape, countOffShape, dayShape, dayOffShape, 
-     spineBgShape, spineBgOffShape, bgPicShape, bgOffShape, bgShape, shape, isTreated = False):
+    def __init__(self, titleShape1, locationShape1, priceShape1, tagSingles1, tagTiula1, tagYolo1, tagWomen1, tagGolders1, tagKultura1, tagYummies1,
+     titleShape2, locationShape2, priceShape2, tagSingles2, tagTiula2, tagYolo2, tagWomen2, tagGolders2, tagKultura2, tagYummies2, countShape, countOffShape, dayShape, dayOffShape, 
+     spineBgShape, spineBgOffShape, bgPicShape, bgOffShape, bgShape, shape):
         self.titleShape1 = titleShape1
         self.locationShape1 = locationShape1
         self.priceShape1 = priceShape1
@@ -200,6 +203,7 @@ class DoubleEventShape:
         self.tagWomen1 = tagWomen1
         self.tagGolders1 = tagGolders1
         self.tagKultura1 = tagKultura1
+        self.tagYummies1 = tagYummies1
         self.titleShape2 = titleShape2
         self.locationShape2 = locationShape2
         self.priceShape2 = priceShape2
@@ -209,6 +213,7 @@ class DoubleEventShape:
         self.tagWomen2 = tagWomen2
         self.tagGolders2 = tagGolders2
         self.tagKultura2 = tagKultura2
+        self.tagYummies2 = tagYummies2
         self.countShape = countShape
         self.countOffShape = countOffShape
         self.dayShape = dayShape
@@ -463,6 +468,7 @@ def get_slide_shapes(slide, isFirstSlide = False):
         single_Women_tags = []
         single_Golders_tags = []
         single_Kultura_tags = []
+        single_Yummies_tags = []
         single_counts = []
         single_count_offs = []
         single_days = []
@@ -484,6 +490,7 @@ def get_slide_shapes(slide, isFirstSlide = False):
         double_Women_tags1 = []
         double_Golders_tags1 = []
         double_Kultura_tags1 = []
+        double_Yummies_tags1 = []
         double_titles2 = []
         double_locations2 = []
         double_prices2 = [] 
@@ -493,6 +500,7 @@ def get_slide_shapes(slide, isFirstSlide = False):
         double_Women_tags2 = []
         double_Golders_tags2 = []
         double_Kultura_tags2 = []
+        double_Yummies_tags2 = []
         double_counts = []
         double_count_offs = []
         double_days = []
@@ -534,6 +542,8 @@ def get_slide_shapes(slide, isFirstSlide = False):
                     single_Golders_tags.append(shape)
                 elif shape.name == 'TAG KULTURA 1':
                     single_Kultura_tags.append(shape)
+                elif shape.name == 'TAG YUMMIES 1':
+                    single_Yummies_tags.append(shape)
                 elif shape.name == 'COUNT':
                     single_counts.append(shape)
                 elif shape.name == 'COUNT OFF':
@@ -577,6 +587,8 @@ def get_slide_shapes(slide, isFirstSlide = False):
                     double_Golders_tags1.append(shape)
                 elif shape.name == 'TAG KULTURA 1':
                     double_Kultura_tags1.append(shape)
+                elif shape.name == 'TAG YUMMIES 1':
+                    double_Yummies_tags1.append(shape)
                 elif shape.name == 'TITLE 2':
                     double_titles2.append(shape)
                 elif shape.name == 'LOCATION 2':
@@ -595,6 +607,8 @@ def get_slide_shapes(slide, isFirstSlide = False):
                     double_Golders_tags2.append(shape)
                 elif shape.name == 'TAG KULTURA 2':
                     double_Kultura_tags2.append(shape)
+                elif shape.name == 'TAG YUMMIES 2':
+                    double_Yummies_tags2.append(shape)
                 elif shape.name == 'COUNT':
                     double_counts.append(shape)
                 elif shape.name == 'COUNT OFF':
@@ -619,13 +633,13 @@ def get_slide_shapes(slide, isFirstSlide = False):
 
         for i in range(36):
             single_event_shape = SingleEventShape(single_titles[i], single_locations[i], single_prices[i], single_Singles_tags[i], single_Tiula_tags[i], single_Yolo_tags[i], single_Women_tags[i],
-                single_Golders_tags[i], single_Kultura_tags[i], single_counts[i], single_count_offs[i], single_days[i], single_day_offs[i], single_spine_bgs[i], single_spine_bg_offs[i],
+                single_Golders_tags[i], single_Kultura_tags[i], None, single_counts[i], single_count_offs[i], single_days[i], single_day_offs[i], single_spine_bgs[i], single_spine_bg_offs[i],
                 single_bg_highlights[i], single_bg_pics[i], single_bg_offs[i], single_bgs[i], single_shapes[i])
             single_event_shapes.append(single_event_shape)
 
             double_event_shape = DoubleEventShape(double_titles1[i], double_locations1[i], double_prices1[i], double_Singles_tags1[i], double_Tiula_tags1[i], double_Yolo_tags1[i], double_Women_tags1[i],
-                double_Golders_tags1[i], double_Kultura_tags1[i], double_titles2[i], double_locations2[i], double_prices2[i], double_Singles_tags2[i], double_Tiula_tags2[i], double_Yolo_tags2[i],
-                double_Women_tags2[i], double_Golders_tags2[i], double_Kultura_tags2[i], double_counts[i], double_count_offs[i], double_days[i], double_day_offs[i], double_spine_bgs[i],
+                double_Golders_tags1[i], double_Kultura_tags1[i], None, double_titles2[i], double_locations2[i], double_prices2[i], double_Singles_tags2[i], double_Tiula_tags2[i], double_Yolo_tags2[i],
+                double_Women_tags2[i], double_Golders_tags2[i], double_Kultura_tags2[i],None, double_counts[i], double_count_offs[i], double_days[i], double_day_offs[i], double_spine_bgs[i],
                 double_spine_bg_offs[i], double_bg_pics[i], double_bg_offs[i], double_bgs[i], double_shapes[i])
             double_event_shapes.append(double_event_shape)
 
@@ -635,15 +649,9 @@ def get_slide_shapes(slide, isFirstSlide = False):
         print("num of groups in first slide = " + str(len(first_slide_groups)))
 
         for g in first_slide_groups:
-            print(g.name)
             if g.name == "SINGLES 1":
-                if len(g.shapes) > 0:
-                    for shape in g.shapes:
-                        print([shape.name for shape in g.shapes])
                 for shape in g.shapes:
-                    print(shape.name)
                     if shape.name == "title":
-                        print("writing title shape to dict")
                         first_slide_shapes_dict["Singles1TitleShape"] = shape
                     elif shape.name == "info":
                         first_slide_shapes_dict["Singles1TextShape"] = shape
@@ -713,6 +721,18 @@ def get_slide_shapes(slide, isFirstSlide = False):
                         first_slide_shapes_dict["Women2TitleShape"] = shape
                     elif shape.name == "info":
                         first_slide_shapes_dict["Women2TextShape"] = shape
+            elif g.name == "YUMMIES 1":
+                for shape in g.shapes:
+                    if shape.name == "title":
+                        first_slide_shapes_dict["Yummies1TitleShape"] = shape
+                    elif shape.name == "info":
+                        first_slide_shapes_dict["Yummies1TextShape"] = shape
+            elif g.name == "YUMMIES 2":
+                for shape in g.shapes:
+                    if shape.name == "title":
+                        first_slide_shapes_dict["Yummies2TitleShape"] = shape
+                    elif shape.name == "info":
+                        first_slide_shapes_dict["Yummies2TextShape"] = shape
             elif g.name == "FOOTER":
                 for shape in g.shapes:
                     if shape.name == "NAME AND TEL":
@@ -726,8 +746,6 @@ def get_slide_shapes(slide, isFirstSlide = False):
 
         first_slide_shapes_dict["month1"] = first_slide_month1_shape
         first_slide_shapes_dict["month2"] = first_slide_month2_shape
-
-        print(first_slide_shapes_dict)
 
         return first_slide_shapes_dict
         
@@ -769,6 +787,8 @@ def find_groups(shapes, isFirstSlide = True):
                 elif shape.name.startswith("GOLDERS"):
                     first_slide_groups.append(shape)
                 elif shape.name.startswith("WOMEN"):
+                    first_slide_groups.append(shape)
+                elif shape.name.startswith("YUMMIES"):
                     first_slide_groups.append(shape)
                 elif shape.name.startswith("FOOTER"):
                     first_slide_groups.append(shape)
@@ -1133,12 +1153,9 @@ def processFirstSlide(slide):
             else:
                 title = excelCommunitiesStrings.excelCommunitiesStringsArray[index]
                 text = "ניפגש בחודשים הבאים!"
-                print(titleKey)
-                print(first_slide_shapes_dict[titleKey])
                 writeTextToTextbox(first_slide_shapes_dict[titleKey].text_frame, title)
                 writeTextToTextbox(first_slide_shapes_dict[textKey].text_frame, text)
 
-    print(first_slide_shapes_dict)
     writeTextToTextbox(first_slide_shapes_dict["year"].text_frame, year)
     writeTextToTextbox(first_slide_shapes_dict["month1"].text_frame, month1)
     writeTextToTextbox(first_slide_shapes_dict["month2"].text_frame, month2)
@@ -1152,7 +1169,6 @@ def create_date_string(month_and_day_string, year_string):
     month = arr[1]
     month = month.replace(" ", "")
     date_string = day + "." + month + "." + year_string
-    print("Date String = " + date_string)
     return date_string
 
 
@@ -1467,14 +1483,16 @@ def treatTags(slide, excelEvent, single_event_shape, secondExcelEvent, double_ev
             commString = communitiesStringsArray[i]
             suffix = "1" if secondExcelEvent != None else ""
             attrToRemove = getattr(event_shape, "tag" + commString + suffix)
-            attrToRemove._element.getparent().remove(attrToRemove._element)
+            if attrToRemove != None:
+                attrToRemove._element.getparent().remove(attrToRemove._element)
 
         if isDoubleShape:
             if allCommunities[i] is not secondExcelEventCommunity:
                 commString = communitiesStringsArray[i]
                 suffix = "2"
                 attrToRemove = getattr(event_shape, "tag" + commString + suffix)
-                attrToRemove._element.getparent().remove(attrToRemove._element)
+                if attrToRemove != None:
+                    attrToRemove._element.getparent().remove(attrToRemove._element)
 
 
 def removeAllTags(event_shape):
