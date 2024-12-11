@@ -1,4 +1,5 @@
 
+import random
 import openpyxl
 from openpyxl.utils import get_column_letter
 import datetime
@@ -50,7 +51,7 @@ FORBIDDEN_SENTENCE_ARABIC = "السعر: شيكل"
 
 class MetaData:
     def __init__(self, firstMonthInteger = None, secondMonthInteger = None, firstMonthName = None, secondMonthName = None, zone = None, year = None, contactName = None, contactPhone = None,
-        language = None, increaseYear = False, hasCacheFile = False):
+        language = None, increaseYear = False, hasCacheFile = False, imagesDirectory = None, allImages = None, usedImages = None):
         self.firstMonthInteger = firstMonthInteger
         self.secondMonthInteger = secondMonthInteger
         self.firstMonthName = firstMonthName
@@ -62,6 +63,9 @@ class MetaData:
         self.language = language
         self.increaseYear = increaseYear
         self.hasCacheFile = hasCacheFile
+        self.imagesDirectory = imagesDirectory
+        self.allImages = allImages
+        self.usedImages = usedImages
 
 
 
@@ -454,7 +458,7 @@ def getEventTypeFromString(eventTypeString):
 
 def get_slide_shapes(slide, isFirstSlide = False):
     singles, doubles, header_shape = find_groups(slide.shapes, isFirstSlide)[:3]
-    first_slide_groups, first_slide_month1_shape, first_slide_month2_shape = find_groups(slide.shapes, isFirstSlide)[3:]
+    first_slide_groups, first_slide_month1_shape, first_slide_month2_shape, first_slide_phone_shape = find_groups(slide.shapes, isFirstSlide)[3:]
     header_shape_dict = {}
     first_slide_shapes_dict = {}
 
@@ -647,7 +651,6 @@ def get_slide_shapes(slide, isFirstSlide = False):
         return single_event_shapes, double_event_shapes, header_shape_dict
     
     else:
-        print("num of groups in first slide = " + str(len(first_slide_groups)))
 
         for g in first_slide_groups:
             if g.name == "SINGLES 1":
@@ -747,6 +750,8 @@ def get_slide_shapes(slide, isFirstSlide = False):
 
         first_slide_shapes_dict["month1"] = first_slide_month1_shape
         first_slide_shapes_dict["month2"] = first_slide_month2_shape
+        first_slide_shapes_dict["phone"] = first_slide_phone_shape
+        print(first_slide_shapes_dict["phone"])
 
         return first_slide_shapes_dict
         
@@ -759,6 +764,7 @@ def find_groups(shapes, isFirstSlide = True):
     first_slide_groups = []
     first_slide_month1_shape = None 
     first_slide_month2_shape = None
+    first_slide_phone_shape = None
 
     if not isFirstSlide:
 
@@ -798,8 +804,11 @@ def find_groups(shapes, isFirstSlide = True):
                     first_slide_month1_shape = shape
                 elif shape.name == "TITLE MONTH 2":
                     first_slide_month2_shape = shape
+                elif shape.name == "PHONE CONTACT":
+                    first_slide_phone_shape = shape
+                    print(first_slide_phone_shape)
 
-    return singles, doubles, header, first_slide_groups, first_slide_month1_shape, first_slide_month2_shape
+    return singles, doubles, header, first_slide_groups, first_slide_month1_shape, first_slide_month2_shape, first_slide_phone_shape
 
 
 # iter_textframed_shapes(shapes):
@@ -1072,10 +1081,24 @@ def createPptxPlans(month1, month2, area, contact, year, language):
         MetaData.contact = contact
         MetaData.year = year
         MetaData.language = language
+        dir = MetaData.imagesDirectory = 'AppData/images'
+
+        if not os.path.isdir(dir):
+            raise ValueError(f"Directory {dir} does not exist")
+    
+        MetaData.allImages = [
+            f for f in os.listdir(dir) 
+            if os.path.isfile(os.path.join(dir, f)) 
+            and os.path.splitext(f)[1].lower() == '.png'
+        ]
+
+        if not MetaData.allImages:
+            raise ValueError(f"No image files found in {dir}")
+
+        MetaData.usedImages = set()
 
 
         readExcel(excelFilePath)
-        print("readExcel is done")
 
         try:
 
@@ -1085,14 +1108,13 @@ def createPptxPlans(month1, month2, area, contact, year, language):
             second_slide = presentation.slides[1]
 
             processFirstSlide(first_slide)
-            print("first slide is done")
             processSecondSlide(second_slide, True)
-            print("second slide is done")
 
             defaultFileName = "תוכניה " + month1 + "-" + month2
 
             files = [('Powerpoint files', '*.pptx')]
             saved_file = asksaveasfile(filetypes = files, defaultextension = files, initialfile  = defaultFileName + " - 1") #TODO: add default file name
+            saved_file2 = asksaveasfile(filetypes = files, defaultextension = files, initialfile  = defaultFileName + " - 2")
             try:
                 presentation.save(saved_file.name)
             except PermissionError: 
@@ -1106,7 +1128,6 @@ def createPptxPlans(month1, month2, area, contact, year, language):
             processFirstSlide(first_slide)
             processSecondSlide(second_slide, False)
 
-            saved_file2 = asksaveasfile(filetypes = files, defaultextension = files, initialfile  = defaultFileName + " - 2")
             try:
                 presentation.save(saved_file2.name)
                 easygui.msgbox("הקבצים נוצרו בהצלחה!")
@@ -1127,7 +1148,6 @@ def createPptxPlans(month1, month2, area, contact, year, language):
 
 def processFirstSlide(slide):
     first_slide_shapes_dict = get_slide_shapes(slide, isFirstSlide = True)
-    print("got first slide shapes")
     month1 = MetaData.firstMonthName
     month2 = MetaData.secondMonthName
     year = MetaData.year
@@ -1162,6 +1182,8 @@ def processFirstSlide(slide):
     writeTextToTextbox(first_slide_shapes_dict["month2"].text_frame, month2)
     writeTextToTextbox(first_slide_shapes_dict["monthes"].text_frame, month1 + "-" + month2)
     writeTextToTextbox(first_slide_shapes_dict["contact"].text_frame, contact)
+    writeTextToTextbox(first_slide_shapes_dict["phone"].text_frame, contact.split(' ')[1])
+    
 
 
 def create_date_string(month_and_day_string, year_string):
@@ -1304,7 +1326,6 @@ def processLastDayOffs(slide, singleEventShapes, doubleEventShapes, year, month)
         treat_off_shape(slide, single_event_shape, double_event_shape)
 
         j += 1
-    print("done with last day offs")
 
 
 
@@ -1363,7 +1384,6 @@ def writeTextToTextboxes(slide, singleEventShapes, doubleEventShapes, headerShap
 
     for i in range(1, numOfDaysInMonth + 1):
         shape_index = get_number_of_shape(year, month, i) - 1
-        print("shape index = " + str(shape_index))
 
         if shape_index >= 0:
 
@@ -1373,8 +1393,6 @@ def writeTextToTextboxes(slide, singleEventShapes, doubleEventShapes, headerShap
             shape_day_in_month = int(single_event_shape.countShape.text_frame.paragraphs[0].runs[0].text)
 
             type = get_shape_type(shape_day_in_month, month)
-
-            print("shape type is " + type.name)
 
             if type == ShapeType.SINGLE:
                 treatSingleShape(slide, single_event_shape, double_event_shepe, shape_day_in_month, month)
@@ -1389,7 +1407,6 @@ def writeTextToTextboxes(slide, singleEventShapes, doubleEventShapes, headerShap
     writeTextToTextbox(headerShape["zone"].text_frame, MetaData.zone)
     writeTextToTextbox(headerShape["month"].text_frame, monthString)
     writeTextToTextbox(headerShape["year"].text_frame, MetaData.year)
-    print("wrote text to textboxes")
 
 
 def get_shape_type(day_in_month, month):
@@ -1454,23 +1471,28 @@ def treatPicShape(slide, single_event_shape, double_event_shape):
     image_path = get_random_image()
     group_left = single_event_shape.shape.left
     group_top = single_event_shape.shape.top
-
-    left = single_event_shape.bgPicShape.left + group_left
-    print("pic shape LEFT: " + str(left))
-    top = single_event_shape.bgPicShape.top + group_top
-    print("pic shape TOP: " + str(top))
     width = single_event_shape.bgPicShape.width
-    print("pic shape WIDTH: " + str(width))
+    #width = 1742400
     height = single_event_shape.bgPicShape.height
-    print("pic shape HEIGHT: " + str(height))
 
     slide.shapes.add_picture(image_path, group_left, group_top, width, height)
     single_event_shape.bgPicShape._element.getparent().remove(single_event_shape.bgPicShape._element)
 
 
 def get_random_image():
-    #TODO: implement random picture for bgPicShape
-    return "Default_little_girl_with_tenticles_instead_of_legs_wearing_a_g_2.jpg"
+    directory = MetaData.imagesDirectory
+    all_images = MetaData.allImages
+    used_images = MetaData.usedImages
+
+    if len(used_images) == len(all_images):
+        used_images.clear()
+        MetaData.used_images.clear()
+
+    unused_images = set(all_images) - used_images
+    image = random.choice(list(unused_images))
+    MetaData.usedImages.add(image)
+
+    return os.path.join(directory, image)
 
 
 
