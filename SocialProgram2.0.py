@@ -24,12 +24,6 @@ import calendar
 from enum import Enum
 
 
-firstMonthExcelEventsDictionary = {}
-secondMonthExcelEventsDictionary = {}
-firstMonthPeakExcelEventsDictionary = {}
-secondMonthPeakExcelEventsDictionary = {}
-peakExcelEventsDictionary = {}
-
 excelEventsDictionary = {}
 
 def addToExcelEventDictionary(excelEvent, Dictionary):
@@ -155,7 +149,7 @@ class EventTypes:
     def __init__(self):
         self.wideString = "אירוע מרחבי"
         self.wide = EventType.WIDE
-        self.peakString = "ארוע שיא"
+        self.peakString = "אירוע שיא"
         self.peak = EventType.PEAK
 
 class ShapeType(Enum):
@@ -403,7 +397,6 @@ def getEventsFromExcel(sheet):
 
     excelEventsDictionary [MetaData.firstMonthInteger] = firstMonthExcelEventsDictionary
     excelEventsDictionary[MetaData.secondMonthInteger] = secondMonthExcelEventsDictionary
-    #peakExcelEventsDictionary = { MetaData.firstMonthInteger : firstMonthPeakExcelEventsDictionary, MetaData.secondMonthInteger : secondMonthPeakExcelEventsDictionary }
 
 
 
@@ -431,6 +424,8 @@ def getCommunityFromString(communityString):
         return Community.GOLDERS
     elif excelCommunitiesStrings.Kultura in communityString:
         return Community.KULTURA
+    elif excelCommunitiesStrings.Yummies in communityString:
+        return Community.YUMMIES
     else:
         return None
 
@@ -612,7 +607,7 @@ def get_slide_shapes(slide, isFirstSlide = False):
                     double_Golders_tags2.append(shape)
                 elif shape.name == 'TAG KULTURA 2':
                     double_Kultura_tags2.append(shape)
-                elif shape.name == 'TAG YUMMIES 2':
+                elif shape.name == 'YUMMIES 2':
                     double_Yummies_tags2.append(shape)
                 elif shape.name == 'COUNT':
                     double_counts.append(shape)
@@ -638,13 +633,13 @@ def get_slide_shapes(slide, isFirstSlide = False):
 
         for i in range(36):
             single_event_shape = SingleEventShape(single_titles[i], single_locations[i], single_prices[i], single_Singles_tags[i], single_Tiula_tags[i], single_Yolo_tags[i], single_Women_tags[i],
-                single_Golders_tags[i], single_Kultura_tags[i], None, single_counts[i], single_count_offs[i], single_days[i], single_day_offs[i], single_spine_bgs[i], single_spine_bg_offs[i],
+                single_Golders_tags[i], single_Kultura_tags[i], single_Yummies_tags[i], single_counts[i], single_count_offs[i], single_days[i], single_day_offs[i], single_spine_bgs[i], single_spine_bg_offs[i],
                 single_bg_highlights[i], single_bg_pics[i], single_bg_offs[i], single_bgs[i], single_shapes[i])
             single_event_shapes.append(single_event_shape)
 
             double_event_shape = DoubleEventShape(double_titles1[i], double_locations1[i], double_prices1[i], double_Singles_tags1[i], double_Tiula_tags1[i], double_Yolo_tags1[i], double_Women_tags1[i],
-                double_Golders_tags1[i], double_Kultura_tags1[i], None, double_titles2[i], double_locations2[i], double_prices2[i], double_Singles_tags2[i], double_Tiula_tags2[i], double_Yolo_tags2[i],
-                double_Women_tags2[i], double_Golders_tags2[i], double_Kultura_tags2[i],None, double_counts[i], double_count_offs[i], double_days[i], double_day_offs[i], double_spine_bgs[i],
+                double_Golders_tags1[i], double_Kultura_tags1[i], double_Yummies_tags1[i], double_titles2[i], double_locations2[i], double_prices2[i], double_Singles_tags2[i], double_Tiula_tags2[i], double_Yolo_tags2[i],
+                double_Women_tags2[i], double_Golders_tags2[i], double_Kultura_tags2[i],double_Yummies_tags2[i], double_counts[i], double_count_offs[i], double_days[i], double_day_offs[i], double_spine_bgs[i],
                 double_spine_bg_offs[i], double_bg_pics[i], double_bg_offs[i], double_bgs[i], double_shapes[i])
             double_event_shapes.append(double_event_shape)
 
@@ -1060,6 +1055,7 @@ def checkValidity(value, extension):
 #         language: 
 
 def createPptxPlans(month1, month2, area, contact, year, language):
+    resetGlobalVariables()
     if len(year)!=4:
             raise Exception("שדה השנה צריך להכיל 4 תוים בדיוק. למשל: 2023")
     try: 
@@ -1075,28 +1071,7 @@ def createPptxPlans(month1, month2, area, contact, year, language):
         cache_file.write(json.dumps(userInput))
         cache_file.close
 
-        MetaData.firstMonthName = month1
-        MetaData.secondMonthName = month2
-        MetaData.zone = area
-        MetaData.contact = contact
-        MetaData.year = year
-        MetaData.language = language
-        dir = MetaData.imagesDirectory = 'AppData/images'
-
-        if not os.path.isdir(dir):
-            raise ValueError(f"Directory {dir} does not exist")
-    
-        MetaData.allImages = [
-            f for f in os.listdir(dir) 
-            if os.path.isfile(os.path.join(dir, f)) 
-            and os.path.splitext(f)[1].lower() == '.png'
-        ]
-
-        if not MetaData.allImages:
-            raise ValueError(f"No image files found in {dir}")
-
-        MetaData.usedImages = set()
-
+        resolveMetaData(month1, month2, area, contact, year, language)
 
         readExcel(excelFilePath)
 
@@ -1142,6 +1117,41 @@ def createPptxPlans(month1, month2, area, contact, year, language):
 
     except Exception as e:
         easygui.msgbox("שגיאה :"+ str(e))
+
+
+def resolveMetaData(month1, month2, area, contact, year, language):
+    MetaData.firstMonthName = month1
+    MetaData.secondMonthName = month2
+    MetaData.zone = area
+    MetaData.contact = contact
+    MetaData.year = year
+    MetaData.language = language
+    dir = MetaData.imagesDirectory = 'AppData/images'
+
+    if not os.path.isdir(dir):
+        raise ValueError(f"Directory {dir} does not exist")
+    
+    MetaData.allImages = [
+        f for f in os.listdir(dir) 
+        if os.path.isfile(os.path.join(dir, f)) 
+        and os.path.splitext(f)[1].lower() == '.png'
+    ]
+
+    if not MetaData.allImages:
+        raise ValueError(f"No image files found in {dir}")
+
+    MetaData.usedImages = set()
+
+
+def resetGlobalVariables():
+    global firstMonthExcelEventsDictionary
+    global secondMonthExcelEventsDictionary
+    global firstMonthPeakExcelEventsDictionary
+    global secondMonthPeakExcelEventsDictionary
+    firstMonthExcelEventsDictionary = {}
+    secondMonthExcelEventsDictionary = {}
+    firstMonthPeakExcelEventsDictionary = {}
+    secondMonthPeakExcelEventsDictionary = {}
 
     
 
@@ -1255,12 +1265,12 @@ def createCalendarDates(slide, singleEventShapes, doubleEventShapes, month, incr
             double_event_shape = doubleEventShapes[num_of_shape]
 
             removeShapeOffElements(slide, single_event_shape)
-            writeTextToTextbox(single_event_shape.countShape.text_frame, str(i))
-            writeTextToTextbox(single_event_shape.dayShape.text_frame, hebrew_letter_of_day(get_week_day(i, month, year))) #TODO: deal with arabic
+            writeTextToTextbox(single_event_shape.countShape.text_frame, str(i), None, PP_ALIGN.CENTER)
+            writeTextToTextbox(single_event_shape.dayShape.text_frame, hebrew_letter_of_day(get_week_day(i, month, year)), None, PP_ALIGN.CENTER) #TODO: deal with arabic
 
             removeShapeOffElements(slide, double_event_shape)
-            writeTextToTextbox(double_event_shape.countShape.text_frame, str(i))
-            writeTextToTextbox(double_event_shape.dayShape.text_frame, hebrew_letter_of_day(get_week_day(i, month, year))) #TODO: deal with arabic
+            writeTextToTextbox(double_event_shape.countShape.text_frame, str(i), None, PP_ALIGN.CENTER)
+            writeTextToTextbox(double_event_shape.dayShape.text_frame, hebrew_letter_of_day(get_week_day(i, month, year)), None, PP_ALIGN.CENTER) #TODO: deal with arabic
 
     processLastDayOffs(slide, singleEventShapes, doubleEventShapes, year, month)
 
@@ -1334,23 +1344,6 @@ def treat_off_shape(slide, single_event_shape, double_event_shape):
     for shape in single_event_shape.shape.shapes:
         if shape.name != "COUNT OFF" and shape.name != "DAY OFF" and shape.name != "SPINE BG OFF" and shape.name != "BG OFF":
             shape._element.getparent().remove(shape._element)
-
-
-    # slide.shapes.element.remove(single_event_shape.titleShape.shape.element)
-    # slide.shapes.element.remove(single_event_shape.locationShape.shape.element)
-    # slide.shapes.element.remove(single_event_shape.priceShape.shape.element)
-    # slide.shapes.element.remove(single_event_shape.tagSinglesShape.shape.element)
-    # slide.shapes.element.remove(single_event_shape.tagTiulaShape.shape.element)
-    # slide.shapes.element.remove(single_event_shape.tagYoloShape.shape.element)
-    # slide.shapes.element.remove(single_event_shape.tagWomenShape.shape.element)
-    # slide.shapes.element.remove(single_event_shape.tagGoldersShape.shape.element)
-    # slide.shapes.element.remove(single_event_shape.tagKulturaShape.shape.element)
-    # slide.shapes.element.remove(single_event_shape.countShape.shape.element)
-    # slide.shapes.element.remove(single_event_shape.dayShape.shape.element)
-    # slide.shapes.element.remove(single_event_shape.spineBgShape.shape.element)
-    # slide.shapes.element.remove(single_event_shape.bgHighlightShape.shape.element)
-    # slide.shapes.element.remove(single_event_shape.bgPicShape.shape.element)
-    # slide.shapes.element.remove(single_event_shape.bgShape.shape.element)
 
 
 def get_week_day(day, month, year):
@@ -1463,16 +1456,15 @@ def treatPicShape(slide, single_event_shape, double_event_shape):
     double_event_shape.shape._element.getparent().remove(double_event_shape.shape._element)
     single_event_shape.bgShape._element.getparent().remove(single_event_shape.bgShape._element)
     single_event_shape.bgHighlightShape._element.getparent().remove(single_event_shape.bgHighlightShape._element)
-    single_event_shape.titleShape._element.getparent().remove(single_event_shape.titleShape._element)
     single_event_shape.locationShape._element.getparent().remove(single_event_shape.locationShape._element)
     single_event_shape.priceShape._element.getparent().remove(single_event_shape.priceShape._element)
-    treatTags(slide, None, single_event_shape, None, double_event_shape)
+    treatTags(slide, None, single_event_shape, None, None)
 
     image_path = get_random_image()
     group_left = single_event_shape.shape.left
     group_top = single_event_shape.shape.top
-    width = single_event_shape.bgPicShape.width
-    #width = 1742400
+
+    width = 1767747
     height = single_event_shape.bgPicShape.height
 
     slide.shapes.add_picture(image_path, group_left, group_top, width, height)
@@ -1496,10 +1488,10 @@ def get_random_image():
 
 
 
-def writeTextToTextbox(shape_text_frame, text, link = None):
+def writeTextToTextbox(shape_text_frame, text, link = None, aligment = None):
     clearTextboxText(shape_text_frame)
     text_frame_paragraph = shape_text_frame.paragraphs[0]
-    text_frame_paragraph.alignment = PP_ALIGN.RIGHT
+    text_frame_paragraph.alignment = aligment if aligment != None else PP_ALIGN.RIGHT
     run = text_frame_paragraph.runs[0]
     run.text = text
     if link != None:
