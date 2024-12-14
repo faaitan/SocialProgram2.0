@@ -24,8 +24,6 @@ import calendar
 from enum import Enum
 
 
-excelEventsDictionary = {}
-
 def addToExcelEventDictionary(excelEvent, Dictionary):
     eventDayInMonth = excelEvent.dayInMonth
     if eventDayInMonth in Dictionary:
@@ -1148,10 +1146,12 @@ def resetGlobalVariables():
     global secondMonthExcelEventsDictionary
     global firstMonthPeakExcelEventsDictionary
     global secondMonthPeakExcelEventsDictionary
+    global excelEventsDictionary
     firstMonthExcelEventsDictionary = {}
     secondMonthExcelEventsDictionary = {}
     firstMonthPeakExcelEventsDictionary = {}
     secondMonthPeakExcelEventsDictionary = {}
+    excelEventsDictionary = {}
 
     
 
