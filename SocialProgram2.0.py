@@ -129,14 +129,30 @@ class Community(Enum):
 class ExcelCommunitiesStrings:
     def __init__(self):
         self.Singles = "סינגלס"
+        self.SinglesSentence1 = "מה עשית החודש כדי לחגוג את הרווקות שלך?!"
+        self.SinglesSentence2 ="קהילת הרווקים והרווקות של יאללה מזמינה אותך להצטרף!"
         self.Tiula = "טיולא"
+        self.TiulaSentence1 = "אין חודש שלא מתאים לטיול בישראל!"
+        self.TiulaSentence2 = "קהילת הטיולים של יאללה מזמינה אותך לצאת למסלולים ולראות נופים"
         self.Yolo = "YOLO"
+        self.YoloSentence1 = "הצטרפו לקהילת הצעירים של יאללה (18-35)!"
+        self.YoloSentence2 = "בילויים, פטפוטים, וכל מה שמעניין צעירים, כי חיים רק פעם אחת"
         self.Women = "נשים"
+        self.WomenSentence1 = "קהילת הנשים הארצית של \"יאללה\" מחכה לך"
+        self.WomenSentence2 = "אצלנו תמצאי פעילויות לנשים ועם נשים, כמוך, כמו שאת."
         self.Golders = "גולדרס"
+        self.GoldersSentence1 = "גולדרס היא קהילת גיל הזהב המקומית שלך"
+        self.GoldersSentence2 = "בארוחת הבוקר, במוזיאון, בבית הקפה... נחכה לך עם מה שמעניין אותך!"
         self.Kultura = "קולטורה"
+        self.KulturaSentence1 = "קהילת התרבות של יאללה מזמינה אותך!"
+        self.KulturaSentence2 = "ניפגש בתערוכות, סרטים, הצגות ועוד אירועי תרבות הכי שווים שיש."
         self.Yummies = "יאמיס"
-        self.excelCommunitiesStringsArray = [item[1] for item in vars(self).items() if not (item[0] == "excelCommunitiesStringsArray" or item == "communitiesStringsArray")]
-        self.communitiesStringsArray = [item[0] for item in vars(self).items() if not (item[0] == "excelCommunitiesStringsArray" or item == "communitiesStringsArray")]
+        self.YummiesSentence1 = "בקהילת האוכל שלנו מאמינים שאוכל הוא טעם החיים"
+        self.YummiesSentence2 = "אצלנו תמצאו טיפים, מתכונים, אירועים וקולינריה. הצטרפו אלינו עכשיו!"
+        self.excelCommunitiesStringsArray = [item[1] for item in vars(self).items() if not (item[0] == "excelCommunitiesStringsArray" or item[0] == "communitiesStringsArray" or item[0] == "excelCommunititesSentences" or "Sentence" in item[0])]
+        self.communitiesStringsArray = [item[0] for item in vars(self).items() if not (item[0] == "excelCommunitiesStringsArray" or item[0] == "communitiesStringsArray" or item[0] == "excelCommunititesSentences" or "Sentence" in item[0])]
+        self.excelCommunititesSentences1 = [item[1] for item in vars(self).items() if not (item[0] == "excelCommunitiesStringsArray" or item[0] == "communitiesStringsArray" or item[0] == "excelCommunititesSentences" or "Sentence1" not in item[0])]
+        self.excelCommunititesSentences2 = [item[1] for item in vars(self).items() if not (item[0] == "excelCommunitiesStringsArray" or item[0] == "communitiesStringsArray" or item[0] == "excelCommunititesSentences" or "Sentence2" not in item[0])]
 
 class EventType(Enum):
     REGULAR = 1
@@ -263,21 +279,6 @@ def readExcel(excel_name):
         raise Exception("שיגאה בעת נסיון פתיחת קובץ שאינו קובץ אקסל")
 
 
-#Split the Event list into first month and second month events
-def splitExcelEventsByMonths(events):
-    first_months_events = []
-    second_months_events = []
-
-    for event in events:
-        if event.month == MetaData.firstMonthInteger:
-            first_months_events.append(event)
-        elif event.month == MetaData.secondMonthInteger:
-            second_months_events.append(event)
-        else:
-            raise Exception("קובץ האקסל מכיל מעל לשני חודשיים")
-    return first_months_events, second_months_events
-
-
 def trimLeadingZero(inputString):
     if inputString.startswith('0'):
         return str(inputString[1:])
@@ -331,7 +332,7 @@ def getEventsFromExcel(sheet):
 
         event_date = sheet.cell(row=rowIndex,column=1).value
         if not checkDateStringValidity(str(event_date)):
-            if str(event_date)=="":
+            if str(event_date)=="" or event_date == None:
                 if rowIsEmpty(sheet, rowIndex, EXCEL_COULUMN_NUMBER):
                     continue;
                 else:
@@ -347,21 +348,21 @@ def getEventsFromExcel(sheet):
         if title is None:
             title = ""
 
-        location = sheet.cell(row=rowIndex,column=6).value
+        location = sheet.cell(row=rowIndex,column=5).value
         if location is None:
             location = ""
 
-        price = sheet.cell(row=rowIndex, column=7).value
+        price = sheet.cell(row=rowIndex, column=6).value
         if price is None:
             price = ""
 
-        communityString = sheet.cell(row = rowIndex, column = 10).value
+        communityString = sheet.cell(row = rowIndex, column = 9).value
         community = getCommunityFromString(communityString)
 
-        link = sheet.cell(row = rowIndex, column = 11).value
+        link = sheet.cell(row = rowIndex, column = 10).value
         #TODO: check link validity
 
-        eventTypeString = sheet.cell(row = rowIndex, column = 12).value
+        eventTypeString = sheet.cell(row = rowIndex, column = 11).value
         eventType = getEventTypeFromString(eventTypeString)
 
 
@@ -400,12 +401,9 @@ def getEventsFromExcel(sheet):
 
 def rowIsEmpty(sheet, rowIndex, maxColIndex):
     for i in range(1,maxColIndex+1):
-        if sheet.cell(row=rowIndex,column=i).value !=None:
+        if sheet.cell(row=rowIndex,column=i).value != None:
             return False
-        else:
-            if sheet.cell(row = rowIndex, column = 7) == None and sheet.cell(row=rowIndex, column =8) == False:
-                return False
-            return True
+    return True
 
 
 def getCommunityFromString(communityString):
@@ -744,7 +742,6 @@ def get_slide_shapes(slide, isFirstSlide = False):
         first_slide_shapes_dict["month1"] = first_slide_month1_shape
         first_slide_shapes_dict["month2"] = first_slide_month2_shape
         first_slide_shapes_dict["phone"] = first_slide_phone_shape
-        print(first_slide_shapes_dict["phone"])
 
         return first_slide_shapes_dict
         
@@ -799,7 +796,6 @@ def find_groups(shapes, isFirstSlide = True):
                     first_slide_month2_shape = shape
                 elif shape.name == "PHONE CONTACT":
                     first_slide_phone_shape = shape
-                    print(first_slide_phone_shape)
 
     return singles, doubles, header, first_slide_groups, first_slide_month1_shape, first_slide_month2_shape, first_slide_phone_shape
 
@@ -889,6 +885,7 @@ def create_program_GUI():
         app.geometry("650x250")
         app.padx = (100,0)
         app['background']='#015293'
+        app.iconbitmap("AppData/software_time_management_daily_sheet_calendar_app_icon_142239.ico")
 
         headLabel = tk.Label(text='פרטים לתוכנית ארועים',  font='Arial 14 bold')
         headLabel.grid(sticky="e", row = 0, column = 5, columnspan = 2)
@@ -1182,8 +1179,8 @@ def processFirstSlide(slide):
                 writeTextToTextbox(first_slide_shapes_dict[titleKey].text_frame, title, link = dictionary[community].link)
                 writeTextToTextbox(first_slide_shapes_dict[textKey].text_frame, text)
             else:
-                title = excelCommunitiesStrings.excelCommunitiesStringsArray[index]
-                text = "ניפגש בחודשים הבאים!"
+                title = excelCommunitiesStrings.excelCommunitiesStringsArray[index] + " : " + excelCommunitiesStrings.excelCommunititesSentences1[index]
+                text = excelCommunitiesStrings.excelCommunititesSentences2[index]
                 writeTextToTextbox(first_slide_shapes_dict[titleKey].text_frame, title)
                 writeTextToTextbox(first_slide_shapes_dict[textKey].text_frame, text)
 
@@ -1192,7 +1189,24 @@ def processFirstSlide(slide):
     writeTextToTextbox(first_slide_shapes_dict["month2"].text_frame, month2)
     writeTextToTextbox(first_slide_shapes_dict["monthes"].text_frame, month1 + "-" + month2)
     writeTextToTextbox(first_slide_shapes_dict["contact"].text_frame, contact)
-    writeTextToTextbox(first_slide_shapes_dict["phone"].text_frame, contact.split(' ')[1])
+    writeTextToTextbox(first_slide_shapes_dict["phone"].text_frame, get_phone_from_contact(contact))
+
+
+
+def get_phone_from_contact(contact):
+    contact_array = contact.split(' ')
+    if len(contact_array) < 2:
+        if contact.isdigit():
+            return contact
+        else:
+            raise Exception("השדה 'לקבלת פרטים לפנות אל' חייב להכיל מספר טלפון")
+    else:
+        if contact_array[0].isdigit():
+            return contact_array[0]
+        elif contact_array[1].isdigit():
+            return contact_array[1]
+        else:
+            raise Exception("השדה 'לקבלת פרטים לפנות אל' חייב להכיל מספר טלפון")
     
 
 
@@ -1284,6 +1298,7 @@ def removeShapeOffElements(slide, shape):
 
 def processFirstDayOffs(slide, singleEventShapes, doubleEventShapes, year, month):
     prev_month = month - 1 if month != 1 else 12
+    prev_year = year if prev_month != 12 else year - 1
     num_of_days_in_previous_month = calendar.monthrange(year, prev_month)[1]
 
 
@@ -1297,7 +1312,7 @@ def processFirstDayOffs(slide, singleEventShapes, doubleEventShapes, year, month
         double_event_shape = doubleEventShapes[i]
 
         writeTextToTextbox(single_event_shape.countOffShape.text_frame, str(j))
-        writeTextToTextbox(single_event_shape.dayOffShape.text_frame, hebrew_letter_of_day(get_week_day(j, prev_month, year))) #TODO: deal with arabic
+        writeTextToTextbox(single_event_shape.dayOffShape.text_frame, hebrew_letter_of_day(get_week_day(j, prev_month, prev_year))) #TODO: deal with arabic
  
         treat_off_shape(slide, single_event_shape, double_event_shape)
 
@@ -1477,8 +1492,8 @@ def get_random_image():
     used_images = MetaData.usedImages
 
     if len(used_images) == len(all_images):
-        used_images.clear()
-        MetaData.used_images.clear()
+        used_images = set()
+        MetaData.usedImages = set()
 
     unused_images = set(all_images) - used_images
     image = random.choice(list(unused_images))
