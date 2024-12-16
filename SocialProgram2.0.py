@@ -22,6 +22,8 @@ import json
 import os
 import calendar
 from enum import Enum
+import subprocess
+import psutil
 
 
 def addToExcelEventDictionary(excelEvent, Dictionary):
@@ -881,7 +883,7 @@ def create_program_GUI():
     try:
 
         app = tk.Tk()
-        app.wm_title("2MonthPlanCreator")
+        app.wm_title("Social Plan Creator")
         app.geometry("650x250")
         app.padx = (100,0)
         app['background']='#015293'
@@ -1080,15 +1082,18 @@ def createPptxPlans(month1, month2, area, contact, year, language):
             processFirstSlide(first_slide)
             processSecondSlide(second_slide, True)
 
-            defaultFileName = "תוכניה " + month1 + "-" + month2
+            incresed_year = str(int(year) + 1) if MetaData.increaseYear else year
+
+            defaultFileName1 = "תוכניה " + month1 + " " + year
+            defaultFileName2 = "תוכניה " + month2 + " " + incresed_year
 
             files = [('Powerpoint files', '*.pptx')]
-            saved_file = asksaveasfile(filetypes = files, defaultextension = files, initialfile  = defaultFileName + " - 1") #TODO: add default file name
-            saved_file2 = asksaveasfile(filetypes = files, defaultextension = files, initialfile  = defaultFileName + " - 2")
+            saved_file = asksaveasfile(filetypes = files, defaultextension = files, initialfile  = defaultFileName1)
+            saved_file2 = asksaveasfile(filetypes = files, defaultextension = files, initialfile  = defaultFileName2)
             try:
                 presentation.save(saved_file.name)
-            except PermissionError: 
-                easygui.msgbox("הקובץ \n"+ saved_file.name+"\n פתוח. יש לסגור אותו בעת הרצת התוכנית")
+            except IOError: 
+                easygui.msgbox("יתכן והקובץ\n"+ saved_file.name+"\nפתוח. יש לסגור אותו ולנסות שנית \nאו בידקו את הרשאות המשתמש")
 
             presentation = Presentation(pptxFilePath)
 
@@ -1100,18 +1105,60 @@ def createPptxPlans(month1, month2, area, contact, year, language):
 
             try:
                 presentation.save(saved_file2.name)
-                easygui.msgbox("הקבצים נוצרו בהצלחה!")
-            except PermissionError: 
-                easygui.msgbox("הקובץ \n"+ saved_file2.name+"\n פתוח. יש לסגור אותו בעת הרצת התוכנית")
+                for proc in psutil.process_iter(['pid', 'name']):
+                    if 'Powerpnt.exe' in proc.info['name']:  # Look for PowerPoint process
+                        proc.terminate()
+                #easygui.msgbox("הקבצים נוצרו בהצלחה!")
+                success_window = tk.Tk()
+                success_window['background']='#015293'
+                success_window.title("הקבצים נוצרו בהצלחה!")
+                success_window.geometry("300x150")  # Set window size
+
+                # Add a centered label
+                label = tk.Label(success_window, text="!הקבצים נוצרו בהצלחה", font=("Arial", 12), justify="center")
+                label.pack(expand=True)  # Center the text vertically and horizontally
+                label['background']='#015293'
+                label.config(fg= "#fdc53e")
+
+                # Add buttons
+                ok_button = tk.Button(success_window, text="סגירה", command=lambda: success_window.destroy())
+                ok_button.pack(side="left", padx=20, pady=10)
+                ok_button['background']='#008fd1'
+                ok_button.config(fg="white")
+
+                cancel_button = tk.Button(success_window, text="פתח תיקיה ", command = lambda: open_destination_folder(saved_file.name ,saved_file2.name, success_window))
+                cancel_button.pack(side="right", padx=20, pady=10)
+                cancel_button['background']='#4cb263'
+                cancel_button.config(fg="white")
+
+                success_window.mainloop()
+            
+            except IOError: 
+                easygui.msgbox("יתכן והקובץ\n"+ saved_file2.name+"\nפתוח. יש לסגור אותו ולנסות שנית \nאו בידקו את הרשאות המשתמש")
 
         except IndexError as e:
             if len(presentation.slides) > 2:
-                raise Exception("תבנית ה-powerpoint מכילה פחות מ-2 שקפים")
+                raise Exception("תבנית ה-powerpoint מכילה יותר מ-2 שקפים")
             else:
-                raise Exception("שגיאה: Index Out of Range")
+                raise Exception("Index Out of Range")
 
     except Exception as e:
         easygui.msgbox("שגיאה :"+ str(e))
+
+
+def open_destination_folder(saved_file, saved_file2, success_window):
+    absolute_path = os.path.abspath(saved_file)
+    folder_path = os.path.dirname(absolute_path)
+
+    absolute_path2 = os.path.abspath(saved_file2)
+    folder_path2 = os.path.dirname(absolute_path2)
+    
+    # Open the folder and highlight the file
+    subprocess.run(f'explorer /select,"{absolute_path}"', shell=True)
+
+    if folder_path != folder_path2:
+        subprocess.run(f'explorer /select,"{absolute_path2}"', shell=True)
+    success_window.destroy()
 
 
 def resolveMetaData(month1, month2, area, contact, year, language):
@@ -1173,21 +1220,20 @@ def processFirstSlide(slide):
             titleKey = commString + str(i) + "TitleShape"
             textKey = commString + str(i) + "TextShape"
             if community in dictionary:
-                full_date = create_date_string(dictionary[community].date, increased_year_string)
+                full_date = create_date_string(dictionary[community].date, year_string) if i == 1 else create_date_string(dictionary[community].date, increased_year_string)
                 title = excelCommunitiesStrings.excelCommunitiesStringsArray[index] + " - " + dictionary[community].title
                 text = dictionary[community].location + " | " + full_date + " | " + dictionary[community].hour
                 writeTextToTextbox(first_slide_shapes_dict[titleKey].text_frame, title, link = dictionary[community].link)
                 writeTextToTextbox(first_slide_shapes_dict[textKey].text_frame, text)
             else:
-                title = excelCommunitiesStrings.excelCommunitiesStringsArray[index] + " : " + excelCommunitiesStrings.excelCommunititesSentences1[index]
-                text = excelCommunitiesStrings.excelCommunititesSentences2[index]
-                writeTextToTextbox(first_slide_shapes_dict[titleKey].text_frame, title)
-                writeTextToTextbox(first_slide_shapes_dict[textKey].text_frame, text)
+                title_string = excelCommunitiesStrings.excelCommunititesSentences1[index] + " " + excelCommunitiesStrings.excelCommunititesSentences2[index]
+                writeTextToTextbox(first_slide_shapes_dict[titleKey].text_frame, title_string)
+                writeTextToTextbox(first_slide_shapes_dict[textKey].text_frame, "")
 
     writeTextToTextbox(first_slide_shapes_dict["year"].text_frame, year)
     writeTextToTextbox(first_slide_shapes_dict["month1"].text_frame, month1)
     writeTextToTextbox(first_slide_shapes_dict["month2"].text_frame, month2)
-    writeTextToTextbox(first_slide_shapes_dict["monthes"].text_frame, month1 + "-" + month2)
+    writeTextToTextbox(first_slide_shapes_dict["monthes"].text_frame, month1 + "-" + month2, aligment = PP_ALIGN.LEFT)
     writeTextToTextbox(first_slide_shapes_dict["contact"].text_frame, contact)
     writeTextToTextbox(first_slide_shapes_dict["phone"].text_frame, get_phone_from_contact(contact))
 
@@ -1412,9 +1458,9 @@ def writeTextToTextboxes(slide, singleEventShapes, doubleEventShapes, headerShap
     monthString = MetaData.firstMonthName if isFirstPresentation else MetaData.secondMonthName
 
 
-    writeTextToTextbox(headerShape["zone"].text_frame, MetaData.zone)
-    writeTextToTextbox(headerShape["month"].text_frame, monthString)
-    writeTextToTextbox(headerShape["year"].text_frame, MetaData.year)
+    writeTextToTextbox(headerShape["zone"].text_frame, MetaData.zone, aligment = PP_ALIGN.LEFT)
+    writeTextToTextbox(headerShape["month"].text_frame, monthString, aligment = PP_ALIGN.LEFT)
+    writeTextToTextbox(headerShape["year"].text_frame, str(year), aligment = PP_ALIGN.LEFT)
 
 
 def get_shape_type(day_in_month, month):
@@ -1502,13 +1548,14 @@ def get_random_image():
     return os.path.join(directory, image)
 
 
-
 def writeTextToTextbox(shape_text_frame, text, link = None, aligment = None):
     clearTextboxText(shape_text_frame)
     text_frame_paragraph = shape_text_frame.paragraphs[0]
     text_frame_paragraph.alignment = aligment if aligment != None else PP_ALIGN.RIGHT
     run = text_frame_paragraph.runs[0]
     run.text = text
+    if run.hyperlink and link == None:
+        run.hyperlink.address = None
     if link != None:
         run.hyperlink.address = link
 
@@ -1564,8 +1611,8 @@ def main():
         create_program_GUI()
     except Exception as e:
         if str(e)=="קובץ ה-cache אינו תקין":
-            easygui.msgbox("שגיאה: \nאאי אפשר לקרוא נתונים מוזנים אחרונים. הקובץ \n\"cache.txt\"\nאינו תקין")
-            easygui.msgbox(e)
+            easygui.msgbox("שגיאה: \nאי אפשר לקרוא נתונים מוזנים אחרונים. הקובץ \n\"cache.txt\"\nאינו תקין")
+        easygui.msgbox(e)
 
 if __name__ == "__main__":
     main()

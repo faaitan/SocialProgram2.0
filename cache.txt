@@ -1,0 +1,1 @@
+{"month1": "\u05d3\u05e6\u05de\u05d1\u05e8", "month2": "\u05d9\u05e0\u05d5\u05d0\u05e8", "area": "\u05d9\u05d1\u05e0\u05d4", "contact": "\u05d0\u05dc\u05db\u05e1 0549439707", "year": "2024", "language": "1"}
