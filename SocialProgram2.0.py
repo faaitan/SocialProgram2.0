@@ -131,30 +131,30 @@ class Community(Enum):
 class ExcelCommunitiesStrings:
     def __init__(self):
         self.Singles = "סינגלס"
-        self.SinglesSentence1 = "מה עשית החודש כדי לחגוג את הרווקות שלך?!"
-        self.SinglesSentence2 ="קהילת הרווקים והרווקות של יאללה מזמינה אותך להצטרף!"
+        self.SinglesDescription  = "כלים למציאת זוגיות, סדנאות, בילויים משותפים ועוד"
+        #self.SinglesSentence2 ="קהילת הרווקים והרווקות של יאללה מזמינה אותך להצטרף!"
         self.Tiula = "טיולא"
-        self.TiulaSentence1 = "אין חודש שלא מתאים לטיול בישראל!"
-        self.TiulaSentence2 = "קהילת הטיולים של יאללה מזמינה אותך לצאת למסלולים ולראות נופים"
+        self.TiulaDescription = "בואו לטייל כל חודש במסלולים יפים עם קהילת טיולא!"
+        #self.TiulaSentence2 = "קהילת הטיולים של יאללה מזמינה אותך לצאת למסלולים ולראות נופים"
         self.Yolo = "YOLO"
-        self.YoloSentence1 = "הצטרפו לקהילת הצעירים של יאללה (18-35)!"
-        self.YoloSentence2 = "בילויים, פטפוטים, וכל מה שמעניין צעירים, כי חיים רק פעם אחת"
+        self.YoloDescription = "הצטרפו לקהילת הצעירים והצעירות של יאללה (18-35)!"
+        #self.YoloSentence2 = "בילויים, פטפוטים, וכל מה שמעניין צעירים, כי חיים רק פעם אחת"
         self.Women = "נשים"
-        self.WomenSentence1 = "קהילת הנשים הארצית של \"יאללה\" מחכה לך"
-        self.WomenSentence2 = "אצלנו תמצאי פעילויות לנשים ועם נשים, כמוך, כמו שאת."
+        self.WomenDescription = "קהילת הנשים הארצית של \"יאללה\" מחכה לך, כמו שאת"
+        #self.WomenSentence2 = "אצלנו תמצאי פעילויות לנשים ועם נשים, כמוך, כמו שאת."
         self.Golders = "גולדרס"
-        self.GoldersSentence1 = "גולדרס היא קהילת גיל הזהב המקומית שלך"
-        self.GoldersSentence2 = "בארוחת הבוקר, במוזיאון, בבית הקפה... נחכה לך עם מה שמעניין אותך!"
+        self.GoldersDescription = "גולדרס היא קהילת גיל הזהב המקומית שלך"
+        #self.GoldersSentence2 = "בארוחת הבוקר, במוזיאון, בבית הקפה... נחכה לך עם מה שמעניין אותך!"
         self.Kultura = "קולטורה"
-        self.KulturaSentence1 = "קהילת התרבות של יאללה מזמינה אותך!"
-        self.KulturaSentence2 = "ניפגש בתערוכות, סרטים, הצגות ועוד אירועי תרבות הכי שווים שיש."
+        self.KulturaDescription = "קהילה של תרבות מזמינה אותך לצאת לתערוכות, הצגות ועוד"
+        #self.KulturaSentence2 = "ניפגש בתערוכות, סרטים, הצגות ועוד אירועי תרבות הכי שווים שיש."
         self.Yummies = "יאמיס"
-        self.YummiesSentence1 = "בקהילת האוכל שלנו מאמינים שאוכל הוא טעם החיים"
-        self.YummiesSentence2 = "אצלנו תמצאו טיפים, מתכונים, אירועים וקולינריה. הצטרפו אלינו עכשיו!"
-        self.excelCommunitiesStringsArray = [item[1] for item in vars(self).items() if not (item[0] == "excelCommunitiesStringsArray" or item[0] == "communitiesStringsArray" or item[0] == "excelCommunititesSentences" or "Sentence" in item[0])]
-        self.communitiesStringsArray = [item[0] for item in vars(self).items() if not (item[0] == "excelCommunitiesStringsArray" or item[0] == "communitiesStringsArray" or item[0] == "excelCommunititesSentences" or "Sentence" in item[0])]
-        self.excelCommunititesSentences1 = [item[1] for item in vars(self).items() if not (item[0] == "excelCommunitiesStringsArray" or item[0] == "communitiesStringsArray" or item[0] == "excelCommunititesSentences" or "Sentence1" not in item[0])]
-        self.excelCommunititesSentences2 = [item[1] for item in vars(self).items() if not (item[0] == "excelCommunitiesStringsArray" or item[0] == "communitiesStringsArray" or item[0] == "excelCommunititesSentences" or "Sentence2" not in item[0])]
+        self.YummiesDescription = "בקהילת האוכל שלנו תמצאו טיפים, מתכונים, אירועים וקולינריה"
+        #self.YummiesSentence2 = "אצלנו תמצאו טיפים, מתכונים, אירועים וקולינריה. הצטרפו אלינו עכשיו!"
+        self.excelCommunitiesStringsArray = [item[1] for item in vars(self).items() if not (item[0] == "excelCommunitiesStringsArray" or item[0] == "communitiesStringsArray" or item[0] == "communitiesDescriptionsArray" or "Description" in item[0])]
+        self.communitiesStringsArray = [item[0] for item in vars(self).items() if not (item[0] == "excelCommunitiesStringsArray" or item[0] == "communitiesStringsArray" or item[0] == "communitiesDescriptionsArray" or "Description" in item[0])]
+        self.communitiesDescriptionsArray = [item[1] for item in vars(self).items() if not (item[0] == "excelCommunitiesStringsArray" or item[0] == "communitiesStringsArray" or item[0] == "communitiesDescriptionsArray" or "Description" not in item[0])]
+        #self.excelCommunititesSentences2 = [item[1] for item in vars(self).items() if not (item[0] == "excelCommunitiesStringsArray" or item[0] == "communitiesStringsArray" or item[0] == "excelCommunititesSentences" or "Sentence2" not in item[0])]
 
 class EventType(Enum):
     REGULAR = 1
@@ -355,7 +355,7 @@ def getEventsFromExcel(sheet):
             location = ""
 
         price = sheet.cell(row=rowIndex, column=6).value
-        if price is None:
+        if price is None or type(price) is bool or price == "F":
             price = ""
 
         communityString = sheet.cell(row = rowIndex, column = 9).value
@@ -367,6 +367,8 @@ def getEventsFromExcel(sheet):
         eventTypeString = sheet.cell(row = rowIndex, column = 11).value
         eventType = getEventTypeFromString(eventTypeString)
 
+        if eventType == EventType.PEAK and community == None:
+            eventType = EventType.WIDE
 
         excelEvent = ExcelEvent(str(event_date), str(hourValue), title, location, price, community, link, eventType)
 
@@ -889,39 +891,50 @@ def create_program_GUI():
         app['background']='#015293'
         app.iconbitmap("AppData/software_time_management_daily_sheet_calendar_app_icon_142239.ico")
 
+        # Configure resizing
+        for i in range(10):  # Maximum rows
+            app.rowconfigure(i, weight=1)
+        for j in range(7):  # Maximum columns
+            app.columnconfigure(j, weight=1)
+
+        app.grid_columnconfigure(0, minsize=20)  # Left margin
+        app.grid_columnconfigure(7, minsize=20)  # Right margin
+        app.grid_rowconfigure(0, minsize=20)    # Top margin
+        app.grid_rowconfigure(10, minsize=20)   # Bottom margin
+
         headLabel = tk.Label(text='פרטים לתוכנית ארועים',  font='Arial 14 bold')
-        headLabel.grid(sticky="e", row = 0, column = 5, columnspan = 2)
+        headLabel.grid(sticky="nsew", row = 0, column = 5, columnspan = 2)
         headLabel['background']='#015293'
         headLabel.config(fg= "#fdc53e")
 
         assignFirstMonthLabel = tk.Label(text="חודש ראשון")
-        assignFirstMonthLabel.grid(sticky="e", row = 1, column =6)
+        assignFirstMonthLabel.grid(sticky="nsew", row = 1, column =6)
         assignFirstMonthLabel['background']='#015293'
         assignFirstMonthLabel.config(fg="white")
 
         assignFirstMonthTextbox = ttk.Entry(justify=tk.RIGHT)
-        assignFirstMonthTextbox.grid(stick="e", row=1, column=5)
+        assignFirstMonthTextbox.grid(stick="nsew", row=1, column=5)
         if useUserSavedInput == True and userSavedInput != None:
             assignFirstMonthTextbox.insert(0, userSavedInput.get("month1"))
 
 
         assignSecondMonthLabel = tk.Label(text="חודש שני")
-        assignSecondMonthLabel.grid(sticky="e", row=1, column = 4)
+        assignSecondMonthLabel.grid(sticky="nsew", row=1, column = 4)
         assignSecondMonthLabel['background']='#015293'
         assignSecondMonthLabel.config(fg="white")
 
         assignSecondMonthTextbox = ttk.Entry(justify=tk.RIGHT)
-        assignSecondMonthTextbox.grid(sticky="e", row=1, column = 3, padx=(10,10))
+        assignSecondMonthTextbox.grid(sticky="nsew", row=1, column = 3, padx=(10,10))
         if useUserSavedInput == True and userSavedInput != None:
             assignSecondMonthTextbox.insert(0, userSavedInput.get("month2"))
 
         assignYearLabel = tk.Label(text = "שנה")
-        assignYearLabel.grid(sticky="e", row = 1, column = 2)
+        assignYearLabel.grid(sticky="nsew", row = 1, column = 2)
         assignYearLabel['background']='#015293'
         assignYearLabel.config(fg="white")
 
         assignYearTextbox = ttk.Entry(justify=tk.RIGHT, width="10")
-        assignYearTextbox.grid(sticky="e", row = 1, column = 1, padx=(10,10))
+        assignYearTextbox.grid(sticky="nsew", row = 1, column = 1, padx=(10,10))
         if useUserSavedInput == True and userSavedInput != None:
             assignYearTextbox.insert(0, userSavedInput.get("year"))
 
@@ -930,11 +943,11 @@ def create_program_GUI():
         hebrew = Radiobutton(app, text="עברית", variable = language, value = 1)
         hebrew['background']='#015293'
         hebrew.config(fg="white", selectcolor="#4cb263")
-        hebrew.grid(row = 2, column = 6, sticky="e")
+        hebrew.grid(row = 2, column = 6, sticky="nsew")
         arabic = Radiobutton(app, text="ערבית", variable = language, value = 2)
         arabic['background']='#015293'
         arabic.config(fg="white", selectcolor="#4cb263")
-        arabic.grid(row = 2, column = 5, sticky="e")
+        arabic.grid(row = 2, column = 5, sticky="nsew")
 
         if useUserSavedInput == True and userSavedInput != None:
             language.set(userSavedInput.get("language"))
@@ -942,58 +955,58 @@ def create_program_GUI():
             language.set(1)
 
         assignLocationLabel = tk.Label(text="מיקום")
-        assignLocationLabel.grid(sticky="e", row = 3, column = 6)
+        assignLocationLabel.grid(sticky="nsew", row = 3, column = 6)
         assignLocationLabel['background']='#015293'
         assignLocationLabel.config(fg="white")
 
         assignLocationTextbox = ttk.Entry(justify=tk.RIGHT)
-        assignLocationTextbox.grid(sticky="e", row = 3, column = 5)
+        assignLocationTextbox.grid(sticky="nsew", row = 3, column = 5)
         if useUserSavedInput == True and userSavedInput != None:
             assignLocationTextbox.insert(0, userSavedInput.get("area"))
 
         assignContactLabel = tk.Label(text = "לקבלת פרטים לפנות אל")
-        assignContactLabel.grid(sticky="e", row = 4, column = 6)
+        assignContactLabel.grid(sticky="nsew", row = 4, column = 6)
         assignContactLabel['background']='#015293'
         assignContactLabel.config(fg="white")
 
         assignContactTextbox = ttk.Entry(justify=tk.RIGHT)
-        assignContactTextbox.grid(sticky="e", row = 4, column = 5)
+        assignContactTextbox.grid(sticky="nsew", row = 4, column = 5)
         if useUserSavedInput == True and userSavedInput != None:
             assignContactTextbox.insert(tk.END, userSavedInput.get("contact"))
 
         directions1 = tk.Label(text = "אנא בחרו קובץ אקסל עם המידע הרלוונטי וקובץ פאוורפוינט לדוגמא", justify="right")
         directions1['background']='#015293'
         directions1.config(fg="white")
-        directions1.grid(sticky="e", row=5, column=4, columnspan=4)
+        directions1.grid(sticky="nsew", row=5, column=4, columnspan=4)
 
         btn1 = tk.Button(text="בחרו קובץ אקסל", command=lambda: assignExcelPath(filedialog.askopenfilename(filetypes=[("קובץ אקסל" , ".xlsx")])))
-        btn1.grid(sticky="e", row=6, column=6)
+        btn1.grid(sticky="nsew", row=6, column=6)
         btn1['background']='#008fd1'
         btn1.config(fg="white")
 
         # Create text widget and specify size.
         textbox1 = Text(app, height = 1, width = 55)
-        textbox1.grid(sticky="e", row=6, column=1, columnspan=5)
+        textbox1.grid(sticky="nsew", row=6, column=1, columnspan=5)
         textbox1.configure(state="disabled")
 
         btn2 = tk.Button(text="בחרו קובץ פאוורפוינט", command=lambda: assignPowerpointPath(filedialog.askopenfilename(filetypes=[("קובץ פאוורפוינט" , ".pptx")])))
-        btn2.grid(sticky="e", row=7, column = 6)
+        btn2.grid(sticky="nsew", row=7, column = 6)
         btn2['background']='#008fd1'
         btn2.config(fg="white")
 
         # Create text widget and specify size.
         textbox2 = Text(app, height = 1, width = 55)
-        textbox2.grid(sticky="e", row=7, column=1, columnspan=5)
+        textbox2.grid(sticky="nsew", row=7, column=1, columnspan=5)
         textbox2.configure(state="disabled")
 
         btn4 = tk.Button(text="צרו תוכנית דו-חודשית!", command= lambda: createPptxPlans(assignFirstMonthTextbox.get(), assignSecondMonthTextbox.get(), assignLocationTextbox.get(), assignContactTextbox.get(),assignYearTextbox.get(), language.get()))
-        btn4.grid(sticky="e", row=9, column = 5)
+        btn4.grid(sticky="nsew", row=9, column = 5)
         btn4['background']='#4cb263'
         btn4.config(fg="white")
 
 
         btn5 = tk.Button(text="סגירה", command=app.destroy)
-        btn5.grid(sticky="e", row=9, column = 4)
+        btn5.grid(sticky="nsew", row=9, column = 3)
         btn5['background']='#008fd1'
         btn5.config(fg="white")
 
@@ -1084,8 +1097,8 @@ def createPptxPlans(month1, month2, area, contact, year, language):
 
             incresed_year = str(int(year) + 1) if MetaData.increaseYear else year
 
-            defaultFileName1 = "תוכניה " + month1 + " " + year
-            defaultFileName2 = "תוכניה " + month2 + " " + incresed_year
+            defaultFileName1 = "תוכניה " + area + " " + month1 + " " + year
+            defaultFileName2 = "תוכניה " + area + " " + month2 + " " + incresed_year
 
             files = [('Powerpoint files', '*.pptx')]
             saved_file = asksaveasfile(filetypes = files, defaultextension = files, initialfile  = defaultFileName1)
@@ -1105,11 +1118,8 @@ def createPptxPlans(month1, month2, area, contact, year, language):
 
             try:
                 presentation.save(saved_file2.name)
-                for proc in psutil.process_iter(['pid', 'name']):
-                    if 'Powerpnt.exe' in proc.info['name']:  # Look for PowerPoint process
-                        proc.terminate()
-                #easygui.msgbox("הקבצים נוצרו בהצלחה!")
-                success_window = tk.Tk()
+                easygui.msgbox("הקבצים נוצרו בהצלחה!")
+                """ success_window = tk.Tk()
                 success_window['background']='#015293'
                 success_window.title("הקבצים נוצרו בהצלחה!")
                 success_window.geometry("300x150")  # Set window size
@@ -1131,7 +1141,7 @@ def createPptxPlans(month1, month2, area, contact, year, language):
                 cancel_button['background']='#4cb263'
                 cancel_button.config(fg="white")
 
-                success_window.mainloop()
+                success_window.mainloop() """
             
             except IOError: 
                 easygui.msgbox("יתכן והקובץ\n"+ saved_file2.name+"\nפתוח. יש לסגור אותו ולנסות שנית \nאו בידקו את הרשאות המשתמש")
@@ -1226,9 +1236,10 @@ def processFirstSlide(slide):
                 writeTextToTextbox(first_slide_shapes_dict[titleKey].text_frame, title, link = dictionary[community].link)
                 writeTextToTextbox(first_slide_shapes_dict[textKey].text_frame, text)
             else:
-                title_string = excelCommunitiesStrings.excelCommunititesSentences1[index] + " " + excelCommunitiesStrings.excelCommunititesSentences2[index]
-                writeTextToTextbox(first_slide_shapes_dict[titleKey].text_frame, title_string)
-                writeTextToTextbox(first_slide_shapes_dict[textKey].text_frame, "")
+                title = excelCommunitiesStrings.excelCommunitiesStringsArray[index]
+                text = excelCommunitiesStrings.communitiesDescriptionsArray[index]
+                writeTextToTextbox(first_slide_shapes_dict[titleKey].text_frame, title)
+                writeTextToTextbox(first_slide_shapes_dict[textKey].text_frame, text)
 
     writeTextToTextbox(first_slide_shapes_dict["year"].text_frame, year)
     writeTextToTextbox(first_slide_shapes_dict["month1"].text_frame, month1)
